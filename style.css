@@ -92,6 +92,7 @@ body {
   font-weight: 700;
   color: var(--primary-color);
   margin: 0;
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -134,6 +135,7 @@ button {
   border-radius: var(--radius-full);
   font-weight: 600;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .btn-outline {
@@ -205,6 +207,8 @@ button {
   gap: 0.5rem;
   margin-right: auto;
   margin-left: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .user-info.hidden {

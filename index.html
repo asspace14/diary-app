@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ボイス日記</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for typography -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="app-title">ボイス日記</h1>
+            <div class="header-actions">
+                <button id="auth-btn" class="btn btn-outline btn-sm">ログイン</button>
+                <div id="user-info" class="user-info hidden">
+                    <img id="user-avatar" src="" alt="User" class="avatar">
+                    <span id="user-name" class="user-name"></span>
+                </div>
+                <button id="export-btn" class="icon-btn" title="月別出力">
+                    <span class="material-icons-round">download</span>
+                </button>
+                <button id="theme-btn" class="icon-btn" title="テーマ切替">
+                    <span class="material-icons-round">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Auth Overlay (shown when not logged in) -->
+        <div id="auth-overlay" class="auth-overlay">
+            <div class="auth-card">
+                <span class="material-icons-round auth-icon">lock</span>
+                <h2>ログインが必要です</h2>
+                <p>日記データはクラウドに安全に保存されます。</p>
+                <button id="login-overlay-btn" class="btn btn-primary auth-login-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"
+                        class="google-icon">
+                    Googleでログイン
+                </button>
+            </div>
+        </div>
+
+        <main class="app-main hidden" id="app-main">
+            <!-- Calendar Section -->
+            <section class="calendar-section">
+                <div class="calendar-header">
+                    <button id="prev-month" class="icon-btn"><span
+                            class="material-icons-round">chevron_left</span></button>
+                    <h2 id="current-month-year" class="month-title">--年--月</h2>
+                    <button id="next-month" class="icon-btn"><span
+                            class="material-icons-round">chevron_right</span></button>
+                </div>
+                <div class="calendar-grid">
+                    <!-- Days of week -->
+                    <div class="days-header">
+                        <div class="day-name">日</div>
+                        <div class="day-name">月</div>
+                        <div class="day-name">火</div>
+                        <div class="day-name">水</div>
+                        <div class="day-name">木</div>
+                        <div class="day-name">金</div>
+                        <div class="day-name">土</div>
+                    </div>
+                    <!-- Calendar dates will be injected here by calendar.js -->
+                    <div id="calendar-dates-container" class="calendar-dates"></div>
+                </div>
+            </section>
+
+            <!-- Editor Section -->
+            <section class="editor-section">
+                <div class="editor-header">
+                    <h3 id="selected-date-display" class="selected-date">日付を選択してください</h3>
+                    <div class="editor-status">
+                        <span id="save-status" class="status-indicator"></span>
+                    </div>
+                </div>
+
+                <div class="editor-controls">
+                    <button id="mic-btn" class="btn btn-primary mic-btn">
+                        <span class="material-icons-round">mic</span>
+                        <span class="btn-text">音声入力</span>
+                    </button>
+                    <button id="clear-btn" class="btn btn-danger icon-btn" title="削除">
+                        <span class="material-icons-round">delete_outline</span>
+                    </button>
+                </div>
+
+                <div class="textarea-container">
+                    <textarea id="diary-textarea" class="diary-input" placeholder="ここに日記を書くか、音声入力を開始してください..."
+                        disabled></textarea>
+                </div>
+            </section>
+        </main>
+
+        <!-- Export Modal -->
+        <div id="export-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 class="modal-title">出力範囲の選択</h3>
+                <div class="modal-body">
+                    <p class="modal-desc">出力する範囲を選択してください。</p>
+                    <div class="export-options">
+                        <button id="export-day-btn" class="btn btn-outline">選択した日</button>
+                        <button id="export-month-btn" class="btn btn-outline">表示中の月</button>
+                        <button id="export-year-btn" class="btn btn-outline">表示中の年</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="close-modal-btn" class="btn btn-text">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="storage.js"></script>
+    <script type="module" src="speech.js"></script>
+    <script type="module" src="calendar.js"></script>
+    <script type="module" src="export.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

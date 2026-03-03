@@ -233,6 +233,25 @@ button {
   text-overflow: ellipsis;
 }
 
+@media (max-width: 480px) {
+  .user-name {
+    display: none;
+  }
+
+  .app-title {
+    font-size: 1.1rem;
+  }
+
+  .header-actions {
+    gap: 0.25rem;
+  }
+
+  .btn-sm {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
 .btn-sm {
   padding: 0.4rem 0.8rem;
   font-size: 0.8rem;

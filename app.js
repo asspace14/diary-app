@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Core Functions ---
 
     function initAuth() {
-        onAuthChange((user) => {
+        onAuthChange(async (user) => {
             if (user) {
                 // Logged in
                 elements.authOverlay.classList.add('hidden');
@@ -76,9 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // We'll reload data from Firestore here later
-                // For now just re-render calendar with whatever is in storage
-                calendar.render();
-                selectDate(currentDateStr, new Date(currentDateStr));
+                if (calendar) {
+                    const { year, month } = calendar.getYearMonth();
+                    await storage.loadMonthData(year, month + 1);
+
+                    calendar.render();
+                    if (currentDateStr) {
+                        selectDate(currentDateStr, new Date(currentDateStr));
+                    }
+                }
 
             } else {
                 // Not logged in

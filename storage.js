@@ -99,6 +99,39 @@ export function getEntriesForMonth(year, month) {
   return result;
 }
 
+export async function getEntriesForDateRange(startDateStr, endDateStr) {
+  const user = getCurrentUser();
+  if (!user) return {};
+
+  try {
+    const startMonth = startDateStr.substring(0, 7);
+    const endMonth = endDateStr.substring(0, 7);
+
+    const fetchMonth = async (prefix) => {
+      const q = query(collection(db, `users/${user.uid}/entries`), where('monthPrefix', '==', prefix));
+      const snap = await getDocs(q);
+      const data = {};
+      snap.forEach(doc => { data[doc.id] = doc.data().content; });
+      return data;
+    };
+
+    const data1 = await fetchMonth(startMonth);
+    const data2 = startMonth !== endMonth ? await fetchMonth(endMonth) : {};
+
+    const allData = { ...data1, ...data2 };
+    const result = {};
+    for (const date in allData) {
+      if (date >= startDateStr && date <= endDateStr) {
+        result[date] = allData[date];
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error("Error loading date range data:", error);
+    return {};
+  }
+}
+
 export async function getEntriesForYear(year) {
   const user = getCurrentUser();
   if (!user) return {};

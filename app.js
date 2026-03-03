@@ -1,7 +1,7 @@
 import * as storage from './storage.js';
 import { Calendar } from './calendar.js';
 import { SpeechApp } from './speech.js';
-import { exportDayData, exportMonthData, exportYearData } from './export.js';
+import { exportDayData, exportWeekData, exportMonthData, exportYearData } from './export.js';
 import { login, logout, onAuthChange, getCurrentUser } from './auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Modal
         exportModal: document.getElementById('export-modal'),
         exportDayBtn: document.getElementById('export-day-btn'),
+        exportWeekBtn: document.getElementById('export-week-btn'),
         exportMonthBtn: document.getElementById('export-month-btn'),
         exportYearBtn: document.getElementById('export-year-btn'),
         closeModalBtn: document.getElementById('close-modal-btn'),
@@ -284,6 +285,18 @@ document.addEventListener('DOMContentLoaded', () => {
         closeExportModal();
     }
 
+    async function handleExportWeek() {
+        showToast('データを取得中...');
+        const success = await exportWeekData(currentDateStr);
+
+        if (success) {
+            showToast(`週のデータを出力しました`);
+        } else {
+            showToast(`選択した週の日記データがありません`);
+        }
+        closeExportModal();
+    }
+
     async function handleExportMonth() {
         showToast('データを取得中...');
         const { year, month } = calendar.getYearMonth();
@@ -332,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.exportBtn.addEventListener('click', openExportModal);
         elements.closeModalBtn.addEventListener('click', closeExportModal);
         elements.exportDayBtn.addEventListener('click', handleExportDay);
+        elements.exportWeekBtn.addEventListener('click', handleExportWeek);
         elements.exportMonthBtn.addEventListener('click', handleExportMonth);
         elements.exportYearBtn.addEventListener('click', handleExportYear);
 

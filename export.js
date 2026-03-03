@@ -18,6 +18,47 @@ export function exportDayData(dateStr) {
     return true;
 }
 
+export async function exportWeekData(dateStr) {
+    const selectedDate = new Date(dateStr);
+    const dayOfWeek = selectedDate.getDay(); // 0 is Sunday
+
+    // Calculate start of week (Sunday)
+    const startOfWeek = new Date(selectedDate);
+    startOfWeek.setDate(selectedDate.getDate() - dayOfWeek);
+
+    // Calculate end of week (Saturday)
+    const endOfWeek = new Date(selectedDate);
+    endOfWeek.setDate(selectedDate.getDate() + (6 - dayOfWeek));
+
+    // Format YYYY-MM-DD
+    const formatDate = (date) => {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const startStr = formatDate(startOfWeek);
+    const endStr = formatDate(endOfWeek);
+
+    const entries = await storage.getEntriesForDateRange(startStr, endStr);
+    const keys = Object.keys(entries).sort();
+
+    if (keys.length === 0) {
+        return false;
+    }
+
+    let text = `${startStr} 〜 ${endStr} 日記データ\n`;
+    text += "=========================================\n\n";
+
+    keys.forEach(date => {
+        text += `[${date}]\n`;
+        text += `${entries[date]}\n\n`;
+        text += "-----------------------------------------\n\n";
+    });
+
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    downloadBlob(blob, `diary_week_${startStr}_to_${endStr}.txt`);
+    return true;
+}
+
 export async function exportMonthData(year, month) {
     // Ensure data is loaded
     await storage.loadMonthData(year, month);

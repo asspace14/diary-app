@@ -1,12 +1,20 @@
 import * as storage from './storage.js';
+import * as tStorage from './training-storage.js';
 import { Calendar } from './calendar.js';
 import { SpeechApp } from './speech.js';
 import { exportDayData, exportWeekData, exportMonthData, exportYearData } from './export.js';
 import { login, logout, onAuthChange, getCurrentUser } from './auth.js';
+import { initTraining, onTrainingAuthChange, selectTrainingDate } from './training.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const elements = {
+        // Mode Switcher
+        modeDiaryBtn: document.getElementById('mode-diary-btn'),
+        modeTrainingBtn: document.getElementById('mode-training-btn'),
+        diaryView: document.getElementById('diary-view'),
+        trainingView: document.getElementById('training-view'),
+
         themeBtn: document.getElementById('theme-btn'),
         exportBtn: document.getElementById('export-btn'),
         prevMonthBtn: document.getElementById('prev-month'),
@@ -51,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuth();
     initCalendar();
     initSpeech();
+    initTraining();
     initEventListeners();
 
     // Select today initially
@@ -67,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.authOverlay.classList.add('hidden');
                 elements.appMain.classList.remove('hidden');
 
+                // Initialize Training Auth
+                onTrainingAuthChange(user);
+
                 // Update Header UI
                 elements.authBtn.textContent = 'ログアウト';
                 elements.userInfo.classList.remove('hidden');
@@ -78,7 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // We'll reload data from Firestore here later
                 if (calendar) {
                     const { year, month } = calendar.getYearMonth();
-                    await storage.loadMonthData(year, month + 1);
+                    await Promise.all([
+                        storage.loadMonthData(year, month + 1),
+                        tStorage.loadMonthTrainingData(year, month + 1)
+                    ]);
 
                     calendar.render();
                     if (currentDateStr) {
@@ -90,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Not logged in
                 elements.authOverlay.classList.remove('hidden');
                 elements.appMain.classList.add('hidden');
+                onTrainingAuthChange(null);
 
                 // Update Header UI
                 elements.authBtn.textContent = 'ログイン';
@@ -142,7 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
             selectDate,
             async (year, month) => {
                 if (getCurrentUser()) {
-                    await storage.loadMonthData(year, month);
+                    await Promise.all([
+                        storage.loadMonthData(year, month),
+                        tStorage.loadMonthTrainingData(year, month)
+                    ]);
                 }
             }
         );
@@ -223,6 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.textarea.disabled = false;
         elements.textarea.value = storage.getEntry(dateStr);
 
+        // Update Training Date
+        selectTrainingDate(dateStr, dateObj);
+
         // Stop recording if active
         if (speechApp && speechApp.isRecording) {
             speechApp.stop();
@@ -281,24 +303,35 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.exportModal.classList.add('hidden');
     }
 
-    function handleExportDay() {
-        const success = exportDayData(currentDateStr);
-        if (success) {
-            showToast(`${currentDateStr}のデータを出力しました`);
+    function getActiveMode() {
+        return elements.modeDiaryBtn.classList.contains('active') ? 'diary' : 'training';
+    }
+
+    async function handleExportDay() {
+        const mode = getActiveMode();
+        if (mode === 'diary') {
+            const success = exportDayData(currentDateStr);
+            if (success) showToast(`${currentDateStr}の日記データを出力しました`);
+            else showToast(`${currentDateStr}の日記データがありません`);
         } else {
-            showToast(`${currentDateStr}の日記データがありません`);
+            const success = await tStorage.exportTrainingDayData(currentDateStr);
+            if (success) showToast(`${currentDateStr}の筋トレデータを出力しました`);
+            else showToast(`${currentDateStr}の筋トレデータがありません`);
         }
         closeExportModal();
     }
 
     async function handleExportWeek() {
         showToast('データを取得中...');
-        const success = await exportWeekData(currentDateStr);
-
-        if (success) {
-            showToast(`週のデータを出力しました`);
+        const mode = getActiveMode();
+        if (mode === 'diary') {
+            const success = await exportWeekData(currentDateStr);
+            if (success) showToast(`週の日記データを出力しました`);
+            else showToast(`選択した週の日記データがありません`);
         } else {
-            showToast(`選択した週の日記データがありません`);
+            const success = await tStorage.exportTrainingWeekData(currentDateStr);
+            if (success) showToast(`週の筋トレデータを出力しました`);
+            else showToast(`選択した週の筋トレデータがありません`);
         }
         closeExportModal();
     }
@@ -306,12 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleExportMonth() {
         showToast('データを取得中...');
         const { year, month } = calendar.getYearMonth();
-        const success = await exportMonthData(year, month + 1);
+        const mode = getActiveMode();
 
-        if (success) {
-            showToast(`${year}年${month + 1}月のデータを出力しました`);
+        if (mode === 'diary') {
+            const success = await exportMonthData(year, month + 1);
+            if (success) showToast(`${year}年${month + 1}月の日記データを出力しました`);
+            else showToast(`${year}年${month + 1}月の日記データがありません`);
         } else {
-            showToast(`${year}年${month + 1}月の日記データがありません`);
+            const success = await tStorage.exportTrainingMonthData(year, month + 1);
+            if (success) showToast(`${year}年${month + 1}月の筋トレデータを出力しました`);
+            else showToast(`${year}年${month + 1}月の筋トレデータがありません`);
         }
         closeExportModal();
     }
@@ -319,12 +356,16 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleExportYear() {
         showToast('データを取得中...');
         const { year } = calendar.getYearMonth();
-        const success = await exportYearData(year);
+        const mode = getActiveMode();
 
-        if (success) {
-            showToast(`${year}年のデータを出力しました`);
+        if (mode === 'diary') {
+            const success = await exportYearData(year);
+            if (success) showToast(`${year}年の日記データを出力しました`);
+            else showToast(`${year}年の日記データがありません`);
         } else {
-            showToast(`${year}年の日記データがありません`);
+            const success = await tStorage.exportTrainingYearData(year);
+            if (success) showToast(`${year}年の筋トレデータを出力しました`);
+            else showToast(`${year}年の筋トレデータがありません`);
         }
         closeExportModal();
     }
@@ -338,8 +379,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
+    function switchMode(mode) {
+        if (mode === 'diary') {
+            elements.modeDiaryBtn.classList.add('active');
+            elements.modeTrainingBtn.classList.remove('active');
+            elements.diaryView.classList.remove('hidden');
+            elements.trainingView.classList.add('hidden');
+            document.querySelector('.app-title').textContent = 'ボイス日記';
+        } else {
+            elements.modeTrainingBtn.classList.add('active');
+            elements.modeDiaryBtn.classList.remove('active');
+            elements.trainingView.classList.remove('hidden');
+            elements.diaryView.classList.add('hidden');
+            document.querySelector('.app-title').textContent = '筋トレ管理';
+        }
+    }
+
     // --- Event Listeners Integration ---
     function initEventListeners() {
+        // Mode Switcher
+        elements.modeDiaryBtn.addEventListener('click', () => switchMode('diary'));
+        elements.modeTrainingBtn.addEventListener('click', () => switchMode('training'));
+
         // Auth
         elements.authBtn.addEventListener('click', handleAuthClick);
         elements.loginOverlayBtn.addEventListener('click', handleAuthClick);
@@ -372,5 +433,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Speech
         elements.micBtn.addEventListener('click', toggleSpeech);
+
+        // Custom Event from training.js
+        document.addEventListener('trainingUpdated', () => {
+            calendar.render();
+        });
     }
 });

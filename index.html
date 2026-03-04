@@ -49,6 +49,12 @@
         </div>
 
         <main class="app-main hidden" id="app-main">
+            <!-- Mode Switcher -->
+            <div class="mode-switcher">
+                <button id="mode-diary-btn" class="mode-tab active">📝 日記</button>
+                <button id="mode-training-btn" class="mode-tab">🏋️ 筋トレ</button>
+            </div>
+
             <!-- Calendar Section -->
             <section class="calendar-section">
                 <div class="calendar-header">
@@ -74,30 +80,92 @@
                 </div>
             </section>
 
-            <!-- Editor Section -->
-            <section class="editor-section">
-                <div class="editor-header">
-                    <h3 id="selected-date-display" class="selected-date">日付を選択してください</h3>
-                    <div class="editor-status">
-                        <span id="save-status" class="status-indicator"></span>
+            <!-- Diary View -->
+            <div id="diary-view">
+                <!-- Editor Section -->
+                <section class="editor-section">
+                    <div class="editor-header">
+                        <h3 id="selected-date-display" class="selected-date">日付を選択してください</h3>
+                        <div class="editor-status">
+                            <span id="save-status" class="status-indicator"></span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="editor-controls">
-                    <button id="mic-btn" class="btn btn-primary mic-btn">
-                        <span class="material-icons-round">mic</span>
-                        <span class="btn-text">音声入力</span>
-                    </button>
-                    <button id="clear-btn" class="btn btn-danger icon-btn" title="削除">
-                        <span class="material-icons-round">delete_outline</span>
-                    </button>
-                </div>
+                    <div class="editor-controls">
+                        <button id="mic-btn" class="btn btn-primary mic-btn">
+                            <span class="material-icons-round">mic</span>
+                            <span class="btn-text">音声入力</span>
+                        </button>
+                        <button id="clear-btn" class="btn btn-danger icon-btn" title="削除">
+                            <span class="material-icons-round">delete_outline</span>
+                        </button>
+                    </div>
 
-                <div class="textarea-container">
-                    <textarea id="diary-textarea" class="diary-input" placeholder="ここに日記を書くか、音声入力を開始してください..."
-                        disabled></textarea>
-                </div>
-            </section>
+                    <div class="textarea-container">
+                        <textarea id="diary-textarea" class="diary-input" placeholder="ここに日記を書くか、音声入力を開始してください..."
+                            disabled></textarea>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Training View -->
+            <div id="training-view" class="hidden">
+                <section class="training-section">
+                    <div class="editor-header">
+                        <h3 id="training-date-display" class="selected-date">日付を選択してください</h3>
+                        <div class="training-actions">
+                            <button id="master-btn" class="btn btn-outline btn-sm">種目管理</button>
+                            <button id="copy-history-btn" class="btn btn-outline btn-sm">過去からコピー</button>
+                        </div>
+                    </div>
+
+                    <!-- Add Record Form -->
+                    <div class="training-form-container">
+                        <select id="exercise-select" class="training-input">
+                            <option value="">種目を選択...</option>
+                        </select>
+
+                        <div id="weight-reps-inputs" class="input-group hidden">
+                            <div class="input-wrapper">
+                                <input type="number" id="weight-input" class="training-input" placeholder="kg"
+                                    step="0.5" min="0">
+                            </div>
+                            <span class="input-separator">×</span>
+                            <div class="input-wrapper">
+                                <input type="number" id="reps-input" class="training-input" placeholder="回" min="1">
+                            </div>
+                            <span class="input-separator">×</span>
+                            <div class="input-wrapper">
+                                <input type="number" id="sets-input" class="training-input" placeholder="Set" min="1"
+                                    max="10">
+                            </div>
+                        </div>
+
+                        <div id="cardio-inputs" class="input-group hidden">
+                            <input type="number" id="duration-input" class="training-input small-input" placeholder="分"
+                                min="1">
+                        </div>
+
+                        <button id="add-training-btn" class="btn btn-primary btn-sm" disabled>追加</button>
+                    </div>
+
+                    <!-- Records List -->
+                    <div class="training-list-container">
+                        <ul id="training-list" class="training-list">
+                            <!-- Items injected via JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Interval Timer -->
+                    <div id="interval-timer-container" class="timer-container hidden">
+                        <div class="timer-header">休憩タイマー (3分)</div>
+                        <div class="timer-display-group">
+                            <div id="timer-display" class="timer-display">03:00</div>
+                            <button id="timer-stop-btn" class="btn btn-danger btn-sm hidden">停止</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <!-- Export Modal -->
@@ -119,15 +187,53 @@
             </div>
         </div>
 
+        <!-- Exercise Master Modal -->
+        <div id="master-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 class="modal-title">種目リストの管理</h3>
+                <div class="modal-body">
+                    <div class="add-master-form">
+                        <input type="text" id="new-exercise-name" class="training-input" placeholder="新しい種目名">
+                        <select id="new-exercise-category" class="training-input">
+                            <option value="weight">ウェイト</option>
+                            <option value="cardio">有酸素</option>
+                        </select>
+                        <button id="add-master-btn" class="btn btn-primary btn-sm">追加</button>
+                    </div>
+                    <ul id="master-list" class="master-list"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button id="close-master-btn" class="btn btn-text">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Copy History Modal -->
+        <div id="copy-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 class="modal-title">過去からコピー</h3>
+                <div class="modal-body">
+                    <p class="modal-desc">コピー元の日付を選択してください（選択日のデータで上書きされます）。</p>
+                    <input type="date" id="copy-date-input" class="training-input">
+                </div>
+                <div class="modal-footer">
+                    <button id="close-copy-btn" class="btn btn-text">キャンセル</button>
+                    <button id="execute-copy-btn" class="btn btn-primary">コピー実行</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast hidden"></div>
     </div>
 
     <!-- Scripts -->
     <script type="module" src="storage.js"></script>
+    <script type="module" src="training-storage.js"></script>
     <script type="module" src="speech.js"></script>
     <script type="module" src="calendar.js"></script>
     <script type="module" src="export.js"></script>
+    <script type="module" src="training.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 

@@ -1,5 +1,6 @@
 // calendar.js
 import * as storage from './storage.js';
+import * as tStorage from './training-storage.js';
 
 export class Calendar {
     constructor(containerId, titleId, onDateSelected, onMonthChange) {
@@ -93,6 +94,9 @@ export class Calendar {
             }
             if (storage.hasEntry(dateStr)) {
                 cell.classList.add('has-entry');
+            }
+            if (tStorage.hasTraining(dateStr)) {
+                cell.classList.add('has-training');
             }
 
             // Click handler

@@ -1,21 +1,25 @@
 import * as storage from './storage.js';
 import * as tStorage from './training-storage.js';
 import * as tskStorage from './task-storage.js';
+import * as mStorage from './meal-storage.js';
 import { Calendar } from './calendar.js';
 import { SpeechApp } from './speech.js';
 import { exportDayData, exportWeekData, exportMonthData, exportYearData } from './export.js';
 import { login, logout, onAuthChange, getCurrentUser } from './auth.js';
 import { initTraining, onTrainingAuthChange, selectTrainingDate } from './training.js';
 import { initTasks } from './task.js';
+import { initMeals } from './meal.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const elements = {
         // Mode Switcher
         modeTaskBtn: document.getElementById('mode-task-btn'),
+        modeMealBtn: document.getElementById('mode-meal-btn'),
         modeDiaryBtn: document.getElementById('mode-diary-btn'),
         modeTrainingBtn: document.getElementById('mode-training-btn'),
         taskView: document.getElementById('task-view'),
+        mealView: document.getElementById('meal-view'),
         diaryView: document.getElementById('diary-view'),
         trainingView: document.getElementById('training-view'),
 
@@ -65,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSpeech();
     initTraining();
     initTasks();
+    initMeals();
     initEventListeners();
 
     // Select today initially
@@ -98,7 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     await Promise.all([
                         storage.loadMonthData(year, month + 1),
                         tStorage.loadMonthTrainingData(year, month + 1),
-                        tskStorage.fetchTaskDataForMonth(year, month + 1)
+                        tskStorage.fetchTaskDataForMonth(year, month + 1),
+                        mStorage.fetchMealDataForMonth(year, month + 1)
                     ]);
 
                     calendar.render();
@@ -113,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.appMain.classList.add('hidden');
                 onTrainingAuthChange(null);
                 tskStorage.clearTaskCache();
+                mStorage.clearMealCache();
 
                 // Update Header UI
                 elements.authBtn.textContent = 'ログイン';
@@ -395,17 +402,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchMode(mode) {
         // Reset all buttons and views
         elements.modeTaskBtn.classList.remove('active');
+        elements.modeMealBtn.classList.remove('active');
         elements.modeDiaryBtn.classList.remove('active');
         elements.modeTrainingBtn.classList.remove('active');
 
         elements.taskView.classList.add('hidden');
+        elements.mealView.classList.add('hidden');
         elements.diaryView.classList.add('hidden');
         elements.trainingView.classList.add('hidden');
+
+        // Hide meal settings button by default
+        const mealSettingsBtn = document.getElementById('meal-settings-btn');
+        if (mealSettingsBtn) mealSettingsBtn.classList.add('hidden');
 
         if (mode === 'task') {
             elements.modeTaskBtn.classList.add('active');
             elements.taskView.classList.remove('hidden');
             document.querySelector('.app-title').textContent = 'タスク管理';
+        } else if (mode === 'meal') {
+            elements.modeMealBtn.classList.add('active');
+            elements.mealView.classList.remove('hidden');
+            document.querySelector('.app-title').textContent = '食事管理';
+            if (mealSettingsBtn) mealSettingsBtn.classList.remove('hidden');
         } else if (mode === 'diary') {
             elements.modeDiaryBtn.classList.add('active');
             elements.diaryView.classList.remove('hidden');
@@ -421,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initEventListeners() {
         // Mode Switcher
         elements.modeTaskBtn.addEventListener('click', () => switchMode('task'));
+        elements.modeMealBtn.addEventListener('click', () => switchMode('meal'));
         elements.modeDiaryBtn.addEventListener('click', () => switchMode('diary'));
         elements.modeTrainingBtn.addEventListener('click', () => switchMode('training'));
 
@@ -457,11 +476,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Speech
         elements.micBtn.addEventListener('click', toggleSpeech);
 
-        // Custom Event from training.js and task.js
+        // Custom Event from training.js, task.js, and meal.js
         document.addEventListener('trainingUpdated', () => {
             calendar.render();
         });
         document.addEventListener('tasksUpdated', () => {
+            calendar.render();
+        });
+        document.addEventListener('mealsUpdated', () => {
             calendar.render();
         });
     }

@@ -421,6 +421,16 @@ button {
   background-color: var(--primary-color);
 }
 
+.marker-dot.task {
+  background-color: var(--primary-color);
+  /* Purple/Blue depending on theme */
+}
+
+.marker-dot.meal {
+  background-color: #f59e0b;
+  /* Orange/Amber */
+}
+
 .marker-dot.training {
   background-color: var(--secondary-color);
 }
@@ -680,6 +690,113 @@ button {
   /* Slightly larger text */
   line-height: 1.5;
   word-break: break-word;
+}
+
+/* ==========================================================================
+   Meal Section Styles
+   ========================================================================== */
+
+.meal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.calorie-summaries {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cal-card {
+  flex: 1;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.cal-card.primary {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.cal-card.primary .cal-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cal-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.cal-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.meal-textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.meal-cal-inputs {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.meal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background-color: var(--bg-color);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.meal-item-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.meal-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.meal-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meal-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.meal-cal {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 /* --- Training Feature Styles --- */

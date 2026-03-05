@@ -25,6 +25,9 @@
                     <img id="user-avatar" src="" alt="User" class="avatar">
                     <span id="user-name" class="user-name"></span>
                 </div>
+                <button id="meal-settings-btn" class="icon-btn hidden" title="AI・食事設定">
+                    <span class="material-icons-round">settings</span>
+                </button>
                 <button id="export-btn" class="icon-btn" title="月別出力">
                     <span class="material-icons-round">download</span>
                 </button>
@@ -52,6 +55,7 @@
             <!-- Mode Switcher -->
             <div class="mode-switcher">
                 <button id="mode-task-btn" class="mode-tab active">📝 タスク管理</button>
+                <button id="mode-meal-btn" class="mode-tab">🍽️ 食事管理</button>
                 <button id="mode-training-btn" class="mode-tab">🏋️ 筋トレ</button>
                 <button id="mode-diary-btn" class="mode-tab">📖 日記</button>
             </div>
@@ -95,6 +99,64 @@
 
                     <div class="task-list-container">
                         <ul id="task-list" class="task-list">
+                            <!-- Items injected via JS -->
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Meal View -->
+            <div id="meal-view" class="hidden">
+                <section class="meal-section">
+                    <div class="editor-header">
+                        <h3 id="meal-date-display" class="selected-date">日付を選択してください</h3>
+                        <div class="training-actions">
+                            <button id="meal-master-btn" class="btn btn-outline btn-sm">プリセット管理</button>
+                        </div>
+                    </div>
+
+                    <!-- Calorie Summaries -->
+                    <div class="calorie-summaries">
+                        <div class="cal-card">
+                            <span class="cal-label">前日の総カロリー</span>
+                            <span class="cal-value" id="prev-day-cal">--- kcal</span>
+                        </div>
+                        <div class="cal-card">
+                            <span class="cal-label">過去7日間の合計</span>
+                            <span class="cal-value" id="prev-week-cal">--- kcal</span>
+                        </div>
+                        <div class="cal-card primary">
+                            <span class="cal-label">選択日の合計</span>
+                            <span class="cal-value" id="current-day-cal">0 kcal</span>
+                        </div>
+                    </div>
+
+                    <!-- Add Meal Form -->
+                    <div class="training-form-container">
+                        <select id="meal-type-select" class="training-input">
+                            <option value="breakfast">朝食</option>
+                            <option value="lunch">昼食</option>
+                            <option value="dinner">夕食</option>
+                            <option value="snack">間食</option>
+                        </select>
+                        <select id="meal-preset-select" class="training-input" style="margin-top: 0.25rem;">
+                            <option value="">(プリセットから選ぶ)</option>
+                        </select>
+                        <textarea id="new-meal-input" class="diary-input meal-textarea"
+                            placeholder="食べたもの（例：ハンバーグ定食とサラダ）"></textarea>
+
+                        <div class="meal-cal-inputs">
+                            <button id="ai-estimate-btn" class="btn btn-outline" style="flex: 1;">✨ AIでカロリー推定</button>
+                            <div class="input-wrapper" style="flex: 1;">
+                                <input type="number" id="manual-cal-input" class="training-input"
+                                    placeholder="kcal (手動入力可)">
+                            </div>
+                        </div>
+                        <button id="add-meal-btn" class="btn btn-primary" style="margin-top: 0.5rem;">食事を記録</button>
+                    </div>
+
+                    <div class="task-list-container">
+                        <ul id="meal-list" class="task-list">
                             <!-- Items injected via JS -->
                         </ul>
                     </div>
@@ -247,6 +309,53 @@
 
         <!-- Toast Notification -->
         <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <!-- Meal Settings Modal -->
+    <div id="meal-settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title">AIカロリー計算設定</h3>
+            <p class="modal-desc">
+                AIによるカロリー自動推測を利用するには、無料の <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                    style="color: var(--primary-color);">Gemini APIキー</a> を取得して設定してください。(キーはお使いの端末にのみ保存されます)
+            </p>
+            <div class="input-group" style="flex-direction: column; align-items: flex-start;">
+                <label for="gemini-api-key" style="font-size: 0.9rem; color: var(--text-secondary);">Gemini API
+                    Key</label>
+                <input type="password" id="gemini-api-key" class="training-input" placeholder="AIzaSy...">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-sm" id="close-settings-btn"
+                    style="margin-right: 0.5rem;">キャンセル</button>
+                <button class="btn btn-primary btn-sm" id="save-settings-btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meal Master Modal -->
+    <div id="meal-master-modal" class="modal hidden">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <h3 class="modal-title">食事プリセット管理</h3>
+            <p class="modal-desc">よく食べるメニューとカロリーを登録しておくと、入力時に関単に呼び出せます。</p>
+
+            <ul id="meal-master-list" class="task-list" style="margin-bottom: 1rem;">
+                <!-- Injected via JS -->
+            </ul>
+
+            <div class="training-form-container">
+                <div class="input-group">
+                    <input type="text" id="new-meal-master-name" class="training-input" placeholder="メニュー名"
+                        style="flex: 2;">
+                    <input type="number" id="new-meal-master-cal" class="training-input" placeholder="kcal"
+                        style="flex: 1;">
+                </div>
+                <button id="add-meal-master-btn" class="btn btn-primary" disabled>プリセットを追加</button>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-sm" id="close-meal-master-btn">閉じる</button>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->

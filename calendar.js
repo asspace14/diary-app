@@ -1,7 +1,7 @@
-// calendar.js
 import * as storage from './storage.js';
 import * as tStorage from './training-storage.js';
 import * as tskStorage from './task-storage.js';
+import * as mStorage from './meal-storage.js';
 
 export class Calendar {
     constructor(containerId, titleId, onDateSelected, onMonthChange) {
@@ -115,6 +115,11 @@ export class Calendar {
             if (tskStorage.hasTask(dateStr)) {
                 const dot = document.createElement('span');
                 dot.className = 'marker-dot task';
+                markers.appendChild(dot);
+            }
+            if (mStorage.hasMeal(dateStr)) {
+                const dot = document.createElement('span');
+                dot.className = 'marker-dot meal';
                 markers.appendChild(dot);
             }
 

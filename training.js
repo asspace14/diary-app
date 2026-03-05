@@ -130,7 +130,7 @@ function renderMasterList() {
         li.innerHTML = `
       <div class="master-item-info">
         <span class="master-item-name">${ex.name}</span>
-        <span class="master-item-category ${ex.category}">${ex.category === 'weight' ? 'ウェイト' : '有酸素'}</span>
+        <span class="master-item-category ${ex.category}">${ex.category === 'weight' ? 'ウェイト' : (ex.category === 'cardio' ? '有酸素' : 'その他')}</span>
       </div>
       <button class="icon-btn btn-danger btn-sm delete-master-btn"><span class="material-icons-round">close</span></button>
     `;
@@ -162,9 +162,12 @@ function handleExerciseSelect() {
     } else if (opt.dataset.category === 'weight') {
         elements.weightRepsGroup.classList.remove('hidden');
         elements.cardioGroup.classList.add('hidden');
-    } else {
+    } else if (opt.dataset.category === 'cardio') {
         elements.weightRepsGroup.classList.add('hidden');
         elements.cardioGroup.classList.remove('hidden');
+    } else {
+        elements.weightRepsGroup.classList.add('hidden');
+        elements.cardioGroup.classList.add('hidden');
     }
     validateForm();
 }
@@ -175,8 +178,10 @@ function validateForm() {
     if (opt.value) {
         if (opt.dataset.category === 'weight') {
             isValid = elements.weightInput.value !== '' && elements.repsInput.value !== '' && elements.setsInput.value !== '';
-        } else {
+        } else if (opt.dataset.category === 'cardio') {
             isValid = elements.durationInput.value !== '';
+        } else {
+            isValid = true;
         }
     }
     elements.addRecordBtn.disabled = !isValid;
@@ -201,8 +206,10 @@ async function handleAddRecord() {
         newRecord.reps = parseInt(elements.repsInput.value);
         newRecord.sets = parseInt(elements.setsInput.value);
         newRecord.completed = Array(newRecord.sets).fill(false);
-    } else {
+    } else if (opt.dataset.category === 'cardio') {
         newRecord.duration = parseInt(elements.durationInput.value);
+        newRecord.completed = false;
+    } else {
         newRecord.completed = false;
     }
 
@@ -217,7 +224,7 @@ async function handleAddRecord() {
     if (opt.dataset.category === 'weight') {
         elements.repsInput.value = '';
         elements.setsInput.value = '';
-    } else {
+    } else if (opt.dataset.category === 'cardio') {
         elements.durationInput.value = '';
     }
     validateForm();
@@ -244,8 +251,10 @@ function renderDailyRecords() {
         let detailText = '';
         if (rec.category === 'weight') {
             detailText = `${rec.weight} kg × ${rec.reps} 回${rec.sets ? ` × ${rec.sets} セット` : ''}`;
-        } else {
+        } else if (rec.category === 'cardio') {
             detailText = `${rec.duration} 分`;
+        } else {
+            detailText = '';
         }
 
         let checkboxesHTML = '';

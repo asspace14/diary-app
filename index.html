@@ -51,8 +51,9 @@
         <main class="app-main hidden" id="app-main">
             <!-- Mode Switcher -->
             <div class="mode-switcher">
-                <button id="mode-diary-btn" class="mode-tab active">📝 日記</button>
+                <button id="mode-task-btn" class="mode-tab active">📝 タスク管理</button>
                 <button id="mode-training-btn" class="mode-tab">🏋️ 筋トレ</button>
+                <button id="mode-diary-btn" class="mode-tab">📖 日記</button>
             </div>
 
             <!-- Calendar Section -->
@@ -80,8 +81,28 @@
                 </div>
             </section>
 
+            <!-- Task View -->
+            <div id="task-view">
+                <section class="task-section">
+                    <div class="editor-header">
+                        <h3 id="task-date-display" class="selected-date">日付を選択してください</h3>
+                    </div>
+
+                    <div class="task-input-container">
+                        <input type="text" id="new-task-input" class="training-input" placeholder="新しいタスクを入力...">
+                        <button id="add-task-btn" class="btn btn-primary" disabled>追加</button>
+                    </div>
+
+                    <div class="task-list-container">
+                        <ul id="task-list" class="task-list">
+                            <!-- Items injected via JS -->
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
             <!-- Diary View -->
-            <div id="diary-view">
+            <div id="diary-view" class="hidden">
                 <!-- Editor Section -->
                 <section class="editor-section">
                     <div class="editor-header">
@@ -197,6 +218,7 @@
                         <select id="new-exercise-category" class="training-input">
                             <option value="weight">ウェイト</option>
                             <option value="cardio">有酸素</option>
+                            <option value="other">その他</option>
                         </select>
                         <button id="add-master-btn" class="btn btn-primary btn-sm">追加</button>
                     </div>
@@ -233,6 +255,7 @@
     <script type="module" src="speech.js"></script>
     <script type="module" src="calendar.js"></script>
     <script type="module" src="export.js"></script>
+    <script type="module" src="task.js"></script>
     <script type="module" src="training.js"></script>
     <script type="module" src="app.js"></script>
 </body>

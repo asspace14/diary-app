@@ -272,8 +272,10 @@ function formatRecordsAsText(dateStr, records) {
         let detail = '';
         if (r.category === 'weight') {
             detail = `${r.weight}kg x ${r.reps}回${r.sets ? ` x ${r.sets}セット` : ''}`;
-        } else {
+        } else if (r.category === 'cardio') {
             detail = `${r.duration}分`;
+        } else {
+            detail = '-';
         }
 
         let status = '未完了';

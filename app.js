@@ -1,17 +1,21 @@
 import * as storage from './storage.js';
 import * as tStorage from './training-storage.js';
+import * as tskStorage from './task-storage.js';
 import { Calendar } from './calendar.js';
 import { SpeechApp } from './speech.js';
 import { exportDayData, exportWeekData, exportMonthData, exportYearData } from './export.js';
 import { login, logout, onAuthChange, getCurrentUser } from './auth.js';
 import { initTraining, onTrainingAuthChange, selectTrainingDate } from './training.js';
+import { initTasks } from './task.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const elements = {
         // Mode Switcher
+        modeTaskBtn: document.getElementById('mode-task-btn'),
         modeDiaryBtn: document.getElementById('mode-diary-btn'),
         modeTrainingBtn: document.getElementById('mode-training-btn'),
+        taskView: document.getElementById('task-view'),
         diaryView: document.getElementById('diary-view'),
         trainingView: document.getElementById('training-view'),
 
@@ -60,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCalendar();
     initSpeech();
     initTraining();
+    initTasks();
     initEventListeners();
 
     // Select today initially
@@ -92,7 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { year, month } = calendar.getYearMonth();
                     await Promise.all([
                         storage.loadMonthData(year, month + 1),
-                        tStorage.loadMonthTrainingData(year, month + 1)
+                        tStorage.loadMonthTrainingData(year, month + 1),
+                        tskStorage.fetchTaskDataForMonth(year, month + 1)
                     ]);
 
                     calendar.render();
@@ -106,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.authOverlay.classList.remove('hidden');
                 elements.appMain.classList.add('hidden');
                 onTrainingAuthChange(null);
+                tskStorage.clearTaskCache();
 
                 // Update Header UI
                 elements.authBtn.textContent = 'ログイン';
@@ -160,7 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (getCurrentUser()) {
                     await Promise.all([
                         storage.loadMonthData(year, month),
-                        tStorage.loadMonthTrainingData(year, month)
+                        tStorage.loadMonthTrainingData(year, month),
+                        tskStorage.fetchTaskDataForMonth(year, month)
                     ]);
                 }
             }
@@ -245,6 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update Training Date
         selectTrainingDate(dateStr, dateObj);
 
+        // Dispatch event for task.js
+        document.dispatchEvent(new CustomEvent('dateSelected', { detail: { date: dateStr, dateObj: dateObj } }));
+
         // Stop recording if active
         if (speechApp && speechApp.isRecording) {
             speechApp.stop();
@@ -304,7 +315,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getActiveMode() {
-        return elements.modeDiaryBtn.classList.contains('active') ? 'diary' : 'training';
+        if (elements.modeTaskBtn.classList.contains('active')) return 'task';
+        if (elements.modeDiaryBtn.classList.contains('active')) return 'diary';
+        return 'training';
     }
 
     async function handleExportDay() {
@@ -380,17 +393,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function switchMode(mode) {
-        if (mode === 'diary') {
+        // Reset all buttons and views
+        elements.modeTaskBtn.classList.remove('active');
+        elements.modeDiaryBtn.classList.remove('active');
+        elements.modeTrainingBtn.classList.remove('active');
+
+        elements.taskView.classList.add('hidden');
+        elements.diaryView.classList.add('hidden');
+        elements.trainingView.classList.add('hidden');
+
+        if (mode === 'task') {
+            elements.modeTaskBtn.classList.add('active');
+            elements.taskView.classList.remove('hidden');
+            document.querySelector('.app-title').textContent = 'タスク管理';
+        } else if (mode === 'diary') {
             elements.modeDiaryBtn.classList.add('active');
-            elements.modeTrainingBtn.classList.remove('active');
             elements.diaryView.classList.remove('hidden');
-            elements.trainingView.classList.add('hidden');
             document.querySelector('.app-title').textContent = 'ボイス日記';
         } else {
             elements.modeTrainingBtn.classList.add('active');
-            elements.modeDiaryBtn.classList.remove('active');
             elements.trainingView.classList.remove('hidden');
-            elements.diaryView.classList.add('hidden');
             document.querySelector('.app-title').textContent = '筋トレ管理';
         }
     }
@@ -398,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners Integration ---
     function initEventListeners() {
         // Mode Switcher
+        elements.modeTaskBtn.addEventListener('click', () => switchMode('task'));
         elements.modeDiaryBtn.addEventListener('click', () => switchMode('diary'));
         elements.modeTrainingBtn.addEventListener('click', () => switchMode('training'));
 
@@ -434,8 +457,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Speech
         elements.micBtn.addEventListener('click', toggleSpeech);
 
-        // Custom Event from training.js
+        // Custom Event from training.js and task.js
         document.addEventListener('trainingUpdated', () => {
+            calendar.render();
+        });
+        document.addEventListener('tasksUpdated', () => {
             calendar.render();
         });
     }

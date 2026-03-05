@@ -1,6 +1,7 @@
 // calendar.js
 import * as storage from './storage.js';
 import * as tStorage from './training-storage.js';
+import * as tskStorage from './task-storage.js';
 
 export class Calendar {
     constructor(containerId, titleId, onDateSelected, onMonthChange) {
@@ -81,7 +82,15 @@ export class Calendar {
         for (let day = 1; day <= daysInMonth; day++) {
             const cell = document.createElement('div');
             cell.className = 'calendar-cell';
-            cell.textContent = day;
+
+            const cellText = document.createElement('span');
+            cellText.textContent = day;
+            cellText.className = 'calendar-day-text';
+            cell.appendChild(cellText);
+
+            const markers = document.createElement('div');
+            markers.className = 'calendar-markers';
+            cell.appendChild(markers);
 
             const dateStr = this.formatDate(year, month, day);
 
@@ -92,11 +101,21 @@ export class Calendar {
             if (dateStr === selectedStr) {
                 cell.classList.add('selected');
             }
+            // Add marker dots
             if (storage.hasEntry(dateStr)) {
-                cell.classList.add('has-entry');
+                const dot = document.createElement('span');
+                dot.className = 'marker-dot entry';
+                markers.appendChild(dot);
             }
             if (tStorage.hasTraining(dateStr)) {
-                cell.classList.add('has-training');
+                const dot = document.createElement('span');
+                dot.className = 'marker-dot training';
+                markers.appendChild(dot);
+            }
+            if (tskStorage.hasTask(dateStr)) {
+                const dot = document.createElement('span');
+                dot.className = 'marker-dot task';
+                markers.appendChild(dot);
             }
 
             // Click handler

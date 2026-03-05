@@ -400,18 +400,39 @@ button {
   background-color: transparent;
 }
 
-.has-entry::after {
-  content: '';
+/* Calendar Markers */
+.calendar-markers {
   position: absolute;
-  bottom: 15%;
+  bottom: 12%;
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.marker-dot {
   width: 4px;
   height: 4px;
   border-radius: 50%;
+}
+
+.marker-dot.entry {
   background-color: var(--primary-color);
 }
 
-.calendar-cell.selected.has-entry::after {
+.marker-dot.training {
+  background-color: var(--secondary-color);
+}
+
+.marker-dot.task {
+  background-color: #8b5cf6;
+  /* Purple color for tasks */
+}
+
+.calendar-cell.selected .marker-dot {
   background-color: white;
+  opacity: 0.9;
 }
 
 /* Editor Section */
@@ -787,7 +808,13 @@ button {
 }
 
 .master-item-category.cardio {
-  background-color: var(--success-color);
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.master-item-category.other {
+  background-color: var(--text-secondary);
+  color: white;
 }
 
 /* Timer */
@@ -834,18 +861,4 @@ button {
   flex: 1;
 }
 
-/* Calendar Dots */
-.calendar-cell.has-training::before {
-  content: '';
-  position: absolute;
-  bottom: 15%;
-  right: 35%;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: var(--success-color);
-}
-
-.calendar-cell.has-entry.has-training::after {
-  left: 35%;
-}
+/* (Removed old calendar dots) */

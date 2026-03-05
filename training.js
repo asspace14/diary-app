@@ -73,15 +73,30 @@ function setupEventListeners() {
     if (elements.masterBtn) elements.masterBtn.addEventListener('click', () => elements.masterModal.classList.remove('hidden'));
     if (elements.closeMasterBtn) elements.closeMasterBtn.addEventListener('click', () => elements.masterModal.classList.add('hidden'));
     if (elements.addMasterBtn) elements.addMasterBtn.addEventListener('click', handleAddMaster);
+    if (elements.newExName) {
+        elements.newExName.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !elements.addMasterBtn.disabled) {
+                handleAddMaster();
+            }
+        });
+    }
 
     // Form category switch
     if (elements.exSelect) elements.exSelect.addEventListener('change', handleExerciseSelect);
 
-    // Inputs validation
-    if (elements.weightInput) elements.weightInput.addEventListener('input', validateForm);
-    if (elements.repsInput) elements.repsInput.addEventListener('input', validateForm);
-    if (elements.setsInput) elements.setsInput.addEventListener('input', validateForm);
-    if (elements.durationInput) elements.durationInput.addEventListener('input', validateForm);
+    // Inputs validation and Enter key support
+    const trainingInputs = [elements.weightInput, elements.repsInput, elements.setsInput, elements.durationInput];
+
+    trainingInputs.forEach(input => {
+        if (input) {
+            input.addEventListener('input', validateForm);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !elements.addRecordBtn.disabled) {
+                    handleAddRecord();
+                }
+            });
+        }
+    });
 
     // Add record
     if (elements.addRecordBtn) elements.addRecordBtn.addEventListener('click', handleAddRecord);

@@ -1,5 +1,6 @@
 import * as tStorage from './training-storage.js';
 import { getCurrentUser } from './auth.js';
+import * as storage from './storage.js';
 
 let currentDateStr = '';
 let timerInterval = null;
@@ -61,9 +62,8 @@ export async function onTrainingAuthChange(user) {
 
 export function selectTrainingDate(dateStr, dateObj) {
     currentDateStr = dateStr;
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
     if (elements.dateDisplay) {
-        elements.dateDisplay.textContent = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 (${days[dateObj.getDay()]})`;
+        elements.dateDisplay.textContent = storage.formatDateJp(dateStr) + ' の筋トレ';
     }
     renderDailyRecords();
 }

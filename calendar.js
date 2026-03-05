@@ -1,8 +1,8 @@
-import { getDiaryEntriesForMonth } from './storage.js';
-import { getTrainingEntriesForMonth } from './training-storage.js';
-import { getTaskRecords } from './task-storage.js';
-import { getMealRecords } from './meal-storage.js';
-import { getExpenseRecords } from './expense-storage.js';
+import * as storage from './storage.js';
+import * as tStorage from './training-storage.js';
+import * as tskStorage from './task-storage.js';
+import * as mStorage from './meal-storage.js';
+import * as eStorage from './expense-storage.js';
 
 export class Calendar {
     constructor(containerId, titleId, onDateSelected, onMonthChange) {
@@ -103,28 +103,29 @@ export class Calendar {
                 cell.classList.add('selected');
             }
             // Add marker dots
-            if (getDiaryEntriesForMonth(dateStr).length > 0) { // Changed from storage.hasEntry
+            if (storage.hasEntry(dateStr)) {
                 const dot = document.createElement('span');
                 dot.className = 'marker-dot entry';
                 markers.appendChild(dot);
             }
-            if (getTrainingEntriesForMonth(dateStr).length > 0) { // Changed from tStorage.hasTraining
+            if (tStorage.hasTraining(dateStr)) {
                 const dot = document.createElement('span');
                 dot.className = 'marker-dot training';
                 markers.appendChild(dot);
             }
-            if (getTaskRecords(dateStr).length > 0) { // Changed from tskStorage.hasTask
+            if (tskStorage.hasTask(dateStr)) {
                 const dot = document.createElement('span');
                 dot.className = 'marker-dot task';
                 markers.appendChild(dot);
             }
-            if (getMealRecords(dateStr).length > 0) { // Changed from mStorage.hasMeal
+            if (mStorage.hasMeal(dateStr)) {
                 const dot = document.createElement('span');
                 dot.className = 'marker-dot meal';
                 markers.appendChild(dot);
             }
+
             // Expense Marker
-            const expenses = getExpenseRecords(dateStr) || [];
+            const expenses = eStorage.getExpenseRecords(dateStr) || [];
             if (expenses.length > 0) {
                 const dot = document.createElement('span');
                 dot.className = 'marker-dot';

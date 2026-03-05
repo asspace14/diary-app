@@ -261,8 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update UI
         const days = ['日', '月', '火', '水', '木', '金', '土'];
-        const dayName = days[dateObj.getDay()];
-        elements.dateDisplay.textContent = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 (${dayName})`;
+        elements.dateDisplay.textContent = storage.formatDateJp(dateStr);
 
         // Enable editor and load data
         elements.textarea.disabled = false;

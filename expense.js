@@ -1,4 +1,5 @@
 import * as eStorage from './expense-storage.js';
+import { formatDateJp } from './storage.js';
 
 let currentDateStr = '';
 const elements = {
@@ -17,7 +18,7 @@ export function initExpenses() {
     document.addEventListener('dateSelected', async (e) => {
         currentDateStr = e.detail.date;
         if (elements.dateDisplay) {
-            elements.dateDisplay.textContent = `${currentDateStr} の家計簿`;
+            elements.dateDisplay.textContent = `${formatDateJp(currentDateStr)} の家計簿`;
         }
 
         if (eStorage.getCurrentUser && eStorage.getCurrentUser()) {

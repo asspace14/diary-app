@@ -8,6 +8,14 @@ const THEME_KEY = 'voice_diary_theme';
 let entriesCache = {};
 let currentLoadedMonth = '';
 
+export function formatDateJp(dateStr) {
+  if (!dateStr) return '';
+  const dateObj = new Date(dateStr);
+  if (isNaN(dateObj.getTime())) return dateStr;
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  return `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 (${days[dateObj.getDay()]})`;
+}
+
 export async function loadMonthData(year, month) {
   const user = getCurrentUser();
   if (!user) return {};

@@ -920,22 +920,36 @@ button {
 /* --- Training Feature Styles --- */
 .mode-switcher {
   display: flex;
-  gap: 1rem;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 0;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Hide scrollbar for a cleaner look */
+  scrollbar-width: none;
+}
+
+.mode-switcher::-webkit-scrollbar {
+  display: none;
 }
 
 .mode-tab {
+  flex: 1;
+  text-align: center;
   background: none;
   border: none;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-secondary);
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.2rem;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .mode-tab.active {

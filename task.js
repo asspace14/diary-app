@@ -1,4 +1,5 @@
 import * as tskStorage from './task-storage.js';
+import * as storage from './storage.js';
 
 let currentDateStr = '';
 let currentYear = new Date().getFullYear();
@@ -17,7 +18,7 @@ export async function initTasks() {
     document.addEventListener('dateSelected', async (e) => {
         currentDateStr = e.detail.date;
         if (elements.taskDateDisplay) {
-            elements.taskDateDisplay.textContent = `${currentDateStr} のタスク`;
+            elements.taskDateDisplay.textContent = `${storage.formatDateJp(currentDateStr)} のタスク`;
         }
 
         // Only load if Firebase is initialized

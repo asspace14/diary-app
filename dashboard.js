@@ -3,6 +3,7 @@ import * as tStorage from './training-storage.js';
 import * as tskStorage from './task-storage.js';
 import * as mStorage from './meal-storage.js';
 import * as eStorage from './expense-storage.js';
+import { formatDateJp } from './storage.js';
 
 let currentDateStr = '';
 const elements = {
@@ -15,7 +16,7 @@ export function initDashboard() {
     document.addEventListener('dateSelected', async (e) => {
         currentDateStr = e.detail.date;
         if (elements.dateDisplay) {
-            elements.dateDisplay.textContent = `${currentDateStr} の記録`;
+            elements.dateDisplay.textContent = `${formatDateJp(currentDateStr)} の記録`;
         }
         await renderDashboard();
     });

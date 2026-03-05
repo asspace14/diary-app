@@ -1,4 +1,5 @@
 import * as mStorage from './meal-storage.js';
+import * as storage from './storage.js';
 import { mealAI } from './meal-ai.js';
 
 let currentDateStr = '';
@@ -46,7 +47,7 @@ export async function initMeals() {
     document.addEventListener('dateSelected', async (e) => {
         currentDateStr = e.detail.date;
         if (elements.dateDisplay) {
-            elements.dateDisplay.textContent = `${currentDateStr} の食事記録`;
+            elements.dateDisplay.textContent = `${storage.formatDateJp(currentDateStr)} の食事記録`;
         }
 
         if (mStorage.auth && mStorage.auth.currentUser) {

@@ -146,8 +146,10 @@
                             placeholder="食べたもの（例：ハンバーグ定食とサラダ）"></textarea>
 
                         <div class="meal-cal-inputs">
-                            <button id="ai-estimate-btn" class="btn btn-outline" style="flex: 1;">✨ AIでカロリー推定</button>
-                            <div class="input-wrapper" style="flex: 1;">
+                            <button id="ai-estimate-btn" class="btn btn-outline btn-sm" style="flex: 1;">✨ AI推測</button>
+                            <button id="ai-image-btn" class="btn btn-outline btn-sm" style="flex: 1;">📷 写真推測</button>
+                            <input type="file" id="meal-image-input" accept="image/*" class="hidden">
+                            <div class="input-wrapper" style="flex: 1.5;">
                                 <input type="number" id="manual-cal-input" class="training-input"
                                     placeholder="kcal (手動入力可)">
                             </div>

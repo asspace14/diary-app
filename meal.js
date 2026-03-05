@@ -18,6 +18,8 @@ const elements = {
     mealInput: document.getElementById('new-meal-input'),
     mealCalInput: document.getElementById('manual-cal-input'),
     aiBtn: document.getElementById('ai-estimate-btn'),
+    aiImageBtn: document.getElementById('ai-image-btn'),
+    imageInput: document.getElementById('meal-image-input'),
     addMealBtn: document.getElementById('add-meal-btn'),
     mealList: document.getElementById('meal-list'),
 
@@ -71,6 +73,20 @@ function setupEventListeners() {
     // Add Meal buttons
     if (elements.addMealBtn) elements.addMealBtn.addEventListener('click', handleAddMeal);
     if (elements.aiBtn) elements.aiBtn.addEventListener('click', handleAIEstimate);
+
+    // Image Upload Handlers
+    if (elements.aiImageBtn && elements.imageInput) {
+        elements.aiImageBtn.addEventListener('click', () => {
+            if (!mealAI.hasApiKey()) {
+                alert("Gemini APIキーが設定されていません。右上の歯車アイコンから設定してください。");
+                elements.settingsModal.classList.remove('hidden');
+                return;
+            }
+            elements.imageInput.click();
+        });
+
+        elements.imageInput.addEventListener('change', handleImageUpload);
+    }
 
     // Enter key support for quick add (only for manual calorie if filled, else rely on button for AI)
     if (elements.mealCalInput) {
@@ -265,6 +281,59 @@ async function handleAIEstimate() {
         elements.aiBtn.disabled = false;
         elements.aiBtn.textContent = originalText;
     }
+}
+
+async function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Reset input so the same file can be selected again if needed
+    e.target.value = '';
+
+    elements.aiImageBtn.disabled = true;
+    const originalText = elements.aiImageBtn.textContent;
+    elements.aiImageBtn.textContent = '解析中...';
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const dataUrl = event.target.result;
+            // Parse data:image/jpeg;base64,... format
+            const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z0-9]+);base64,(.+)$/);
+
+            if (!mimeMatch) {
+                throw new Error("画像の読み込みに失敗しました。");
+            }
+
+            const mimeType = mimeMatch[1];
+            const base64Data = mimeMatch[2];
+
+            const result = await mealAI.analyzeImage(base64Data, mimeType);
+
+            if (result.name) {
+                elements.mealInput.value = result.name;
+            }
+            if (result.calories > 0) {
+                elements.mealCalInput.value = result.calories;
+            } else if (!result.name && result.calories === 0) {
+                alert("食べ物を認識できませんでした。");
+            }
+
+        } catch (error) {
+            alert(error.message || '画像解析中にエラーが発生しました。');
+        } finally {
+            elements.aiImageBtn.disabled = false;
+            elements.aiImageBtn.textContent = originalText;
+        }
+    };
+
+    reader.onerror = () => {
+        alert("画像の読み込みに失敗しました。");
+        elements.aiImageBtn.disabled = false;
+        elements.aiImageBtn.textContent = originalText;
+    };
+
+    reader.readAsDataURL(file);
 }
 
 async function handleAddMeal() {

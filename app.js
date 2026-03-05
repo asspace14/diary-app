@@ -9,19 +9,26 @@ import { login, logout, onAuthChange, getCurrentUser } from './auth.js';
 import { initTraining, onTrainingAuthChange, selectTrainingDate } from './training.js';
 import { initTasks } from './task.js';
 import { initMeals } from './meal.js';
+import { initDashboard } from './dashboard.js';
+import { initExpenses } from './expense.js';
+import * as eStorage from './expense-storage.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const elements = {
         // Mode Switcher
+        modeDashboardBtn: document.getElementById('mode-dashboard-btn'),
         modeTaskBtn: document.getElementById('mode-task-btn'),
         modeMealBtn: document.getElementById('mode-meal-btn'),
         modeDiaryBtn: document.getElementById('mode-diary-btn'),
         modeTrainingBtn: document.getElementById('mode-training-btn'),
+        modeExpenseBtn: document.getElementById('mode-expense-btn'),
+        dashboardView: document.getElementById('dashboard-view'),
         taskView: document.getElementById('task-view'),
         mealView: document.getElementById('meal-view'),
         diaryView: document.getElementById('diary-view'),
         trainingView: document.getElementById('training-view'),
+        expenseView: document.getElementById('expense-view'),
 
         themeBtn: document.getElementById('theme-btn'),
         exportBtn: document.getElementById('export-btn'),
@@ -70,6 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initTraining();
     initTasks();
     initMeals();
+    initExpenses();
+    initDashboard();
     initEventListeners();
 
     // Select today initially
@@ -175,7 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     await Promise.all([
                         storage.loadMonthData(year, month),
                         tStorage.loadMonthTrainingData(year, month),
-                        tskStorage.fetchTaskDataForMonth(year, month)
+                        tskStorage.fetchTaskDataForMonth(year, month),
+                        mStorage.fetchMealDataForMonth(year, month), // Load meal data
+                        eStorage.fetchExpenseDataForMonth(year, month) // Load expense data
                     ]);
                 }
             }
@@ -324,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getActiveMode() {
         if (elements.modeTaskBtn.classList.contains('active')) return 'task';
         if (elements.modeDiaryBtn.classList.contains('active')) return 'diary';
+        if (elements.modeExpenseBtn.classList.contains('active')) return 'expense'; // Added expense mode
         return 'training';
     }
 
@@ -333,7 +345,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = exportDayData(currentDateStr);
             if (success) showToast(`${currentDateStr}の日記データを出力しました`);
             else showToast(`${currentDateStr}の日記データがありません`);
-        } else {
+        } else if (mode === 'expense') { // Added expense export
+            const success = await eStorage.exportExpenseDayData(currentDateStr);
+            if (success) showToast(`${currentDateStr}の家計簿データを出力しました`);
+            else showToast(`${currentDateStr}の家計簿データがありません`);
+        }
+        else {
             const success = await tStorage.exportTrainingDayData(currentDateStr);
             if (success) showToast(`${currentDateStr}の筋トレデータを出力しました`);
             else showToast(`${currentDateStr}の筋トレデータがありません`);
@@ -348,7 +365,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = await exportWeekData(currentDateStr);
             if (success) showToast(`週の日記データを出力しました`);
             else showToast(`選択した週の日記データがありません`);
-        } else {
+        } else if (mode === 'expense') { // Added expense export
+            const success = await eStorage.exportExpenseWeekData(currentDateStr);
+            if (success) showToast(`週の家計簿データを出力しました`);
+            else showToast(`選択した週の家計簿データがありません`);
+        }
+        else {
             const success = await tStorage.exportTrainingWeekData(currentDateStr);
             if (success) showToast(`週の筋トレデータを出力しました`);
             else showToast(`選択した週の筋トレデータがありません`);
@@ -365,7 +387,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = await exportMonthData(year, month + 1);
             if (success) showToast(`${year}年${month + 1}月の日記データを出力しました`);
             else showToast(`${year}年${month + 1}月の日記データがありません`);
-        } else {
+        } else if (mode === 'expense') { // Added expense export
+            const success = await eStorage.exportExpenseMonthData(year, month + 1);
+            if (success) showToast(`${year}年${month + 1}月の家計簿データを出力しました`);
+            else showToast(`${year}年${month + 1}月の家計簿データがありません`);
+        }
+        else {
             const success = await tStorage.exportTrainingMonthData(year, month + 1);
             if (success) showToast(`${year}年${month + 1}月の筋トレデータを出力しました`);
             else showToast(`${year}年${month + 1}月の筋トレデータがありません`);
@@ -382,7 +409,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = await exportYearData(year);
             if (success) showToast(`${year}年の日記データを出力しました`);
             else showToast(`${year}年の日記データがありません`);
-        } else {
+        } else if (mode === 'expense') { // Added expense export
+            const success = await eStorage.exportExpenseYearData(year);
+            if (success) showToast(`${year}年の家計簿データを出力しました`);
+            else showToast(`${year}年の家計簿データがありません`);
+        }
+        else {
             const success = await tStorage.exportTrainingYearData(year);
             if (success) showToast(`${year}年の筋トレデータを出力しました`);
             else showToast(`${year}年の筋トレデータがありません`);
@@ -401,47 +433,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchMode(mode) {
         // Reset all buttons and views
+        elements.modeDashboardBtn.classList.remove('active');
         elements.modeTaskBtn.classList.remove('active');
         elements.modeMealBtn.classList.remove('active');
         elements.modeDiaryBtn.classList.remove('active');
         elements.modeTrainingBtn.classList.remove('active');
+        elements.modeExpenseBtn.classList.remove('active'); // Added expense button
 
+        elements.dashboardView.classList.add('hidden');
         elements.taskView.classList.add('hidden');
         elements.mealView.classList.add('hidden');
         elements.diaryView.classList.add('hidden');
         elements.trainingView.classList.add('hidden');
+        elements.expenseView.classList.add('hidden'); // Added expense view
 
         // Hide meal settings button by default
         const mealSettingsBtn = document.getElementById('meal-settings-btn');
         if (mealSettingsBtn) mealSettingsBtn.classList.add('hidden');
 
-        if (mode === 'task') {
+        if (mode === 'dashboard') {
+            elements.modeDashboardBtn.classList.add('active');
+            elements.dashboardView.classList.remove('hidden');
+            document.querySelector('.app-title').textContent = 'ダッシュボード';
+        } else if (mode === 'task') {
             elements.modeTaskBtn.classList.add('active');
             elements.taskView.classList.remove('hidden');
-            document.querySelector('.app-title').textContent = 'タスク管理';
+            document.querySelector('.app-title').textContent = 'タスク';
         } else if (mode === 'meal') {
             elements.modeMealBtn.classList.add('active');
             elements.mealView.classList.remove('hidden');
-            document.querySelector('.app-title').textContent = '食事管理';
+            document.querySelector('.app-title').textContent = '食事';
             if (mealSettingsBtn) mealSettingsBtn.classList.remove('hidden');
         } else if (mode === 'diary') {
             elements.modeDiaryBtn.classList.add('active');
             elements.diaryView.classList.remove('hidden');
-            document.querySelector('.app-title').textContent = 'ボイス日記';
-        } else {
+            document.querySelector('.app-title').textContent = '日記';
+        } else if (mode === 'training') {
             elements.modeTrainingBtn.classList.add('active');
             elements.trainingView.classList.remove('hidden');
-            document.querySelector('.app-title').textContent = '筋トレ管理';
+            document.querySelector('.app-title').textContent = '筋トレ';
+        } else if (mode === 'expense') {
+            elements.modeExpenseBtn.classList.add('active');
+            elements.expenseView.classList.remove('hidden');
+            document.querySelector('.app-title').textContent = '家計簿';
         }
     }
 
     // --- Event Listeners Integration ---
     function initEventListeners() {
         // Mode Switcher
+        elements.modeDashboardBtn.addEventListener('click', () => switchMode('dashboard'));
         elements.modeTaskBtn.addEventListener('click', () => switchMode('task'));
         elements.modeMealBtn.addEventListener('click', () => switchMode('meal'));
         elements.modeDiaryBtn.addEventListener('click', () => switchMode('diary'));
         elements.modeTrainingBtn.addEventListener('click', () => switchMode('training'));
+        elements.modeExpenseBtn.addEventListener('click', () => switchMode('expense')); // Added expense mode listener
 
         // Auth
         elements.authBtn.addEventListener('click', handleAuthClick);

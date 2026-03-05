@@ -54,10 +54,12 @@
         <main class="app-main hidden" id="app-main">
             <!-- Mode Switcher -->
             <div class="mode-switcher">
-                <button id="mode-task-btn" class="mode-tab active">📝 タスク管理</button>
-                <button id="mode-meal-btn" class="mode-tab">🍽️ 食事管理</button>
+                <button id="mode-dashboard-btn" class="mode-tab active">📊 DB</button>
+                <button id="mode-task-btn" class="mode-tab">📝 タスク</button>
+                <button id="mode-meal-btn" class="mode-tab">🍽️ 食事</button>
                 <button id="mode-training-btn" class="mode-tab">🏋️ 筋トレ</button>
                 <button id="mode-diary-btn" class="mode-tab">📖 日記</button>
+                <button id="mode-expense-btn" class="mode-tab">💰 家計簿</button>
             </div>
 
             <!-- Calendar Section -->
@@ -85,8 +87,25 @@
                 </div>
             </section>
 
+            <!-- Dashboard (DB) View -->
+            <div id="dashboard-view" class="hidden">
+                <section class="dashboard-section">
+                    <div class="editor-header">
+                        <h3 id="dashboard-date-display" class="selected-date">日付を選択してください</h3>
+                        <div class="training-actions">
+                            <span id="dashboard-total-cal-badge" class="cal-badge primary hidden">0 kcal</span>
+                        </div>
+                    </div>
+
+                    <div id="dashboard-content" class="dashboard-content">
+                        <!-- Content injected via JS -->
+                        <div class="empty-message">日付を選択してください</div>
+                    </div>
+                </section>
+            </div>
+
             <!-- Task View -->
-            <div id="task-view">
+            <div id="task-view" class="hidden">
                 <section class="task-section">
                     <div class="editor-header">
                         <h3 id="task-date-display" class="selected-date">日付を選択してください</h3>
@@ -251,6 +270,40 @@
                     </div>
                 </section>
             </div>
+
+            <!-- Expense View -->
+            <div id="expense-view" class="hidden">
+                <section class="expense-section">
+                    <div class="editor-header">
+                        <h3 id="expense-date-display" class="selected-date">日付を選択してください</h3>
+                        <div class="training-actions">
+                            <span class="cal-badge primary" id="expense-total-display">0 円</span>
+                        </div>
+                    </div>
+
+                    <!-- Add Expense Form -->
+                    <div class="training-form-container" style="flex-wrap: wrap; gap: 0.5rem;">
+                        <select id="expense-type-select" class="training-input" style="flex: 1 1 30%;">
+                            <option value="cashless">キャッシュレス</option>
+                            <option value="cash">現金</option>
+                        </select>
+                        <input type="text" id="expense-item-input" class="training-input" placeholder="買ったもの（例：スーパー食材）"
+                            style="flex: 1 1 65%;">
+                        <div class="input-group" style="flex: 1 1 100%;">
+                            <input type="number" id="expense-amount-input" class="training-input" placeholder="金額 (円)"
+                                min="0" style="flex: 1;">
+                            <button id="add-expense-btn" class="btn btn-primary">記録</button>
+                        </div>
+                    </div>
+
+                    <!-- Expense List -->
+                    <div class="training-list-container">
+                        <ul id="expense-list" class="task-list">
+                            <!-- Items injected via JS -->
+                        </ul>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <!-- Export Modal -->
@@ -363,6 +416,9 @@
     <!-- Scripts -->
     <script type="module" src="storage.js"></script>
     <script type="module" src="training-storage.js"></script>
+    <script type="module" src="task-storage.js"></script>
+    <script type="module" src="meal-storage.js"></script>
+    <script type="module" src="expense-storage.js"></script>
     <script type="module" src="speech.js"></script>
     <script type="module" src="calendar.js"></script>
     <script type="module" src="export.js"></script>

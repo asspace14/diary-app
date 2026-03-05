@@ -1,5 +1,5 @@
 import { db, auth } from './firebase-config.js';
-import { collection, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 // { 'YYYY-MM-DD': [{ id, text, completed, createdAt }, ...] }
 let taskCache = {};

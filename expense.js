@@ -77,13 +77,14 @@ export async function renderDailyExpenses() {
             li.style.flexWrap = 'nowrap';
             li.style.gap = '0.5rem';
 
+            const amt = Number(exp.amount) || 0;
             li.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-                    <span class="db-badge" style="background-color: ${typeColors[exp.type]}">${typeLabels[exp.type]}</span>
+                    <span class="db-badge" style="background-color: ${typeColors[exp.type] || '#ccc'}">${typeLabels[exp.type] || exp.type}</span>
                     <span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${exp.itemName}</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                    <span style="color: var(--secondary-color); font-weight: 600;">${exp.amount.toLocaleString()} 円</span>
+                    <span style="color: var(--secondary-color); font-weight: 600;">${amt.toLocaleString()} 円</span>
                     <button class="icon-btn btn-danger btn-sm delete-btn" data-id="${exp.id}" title="削除">
                         <span class="material-icons-round">delete_outline</span>
                     </button>

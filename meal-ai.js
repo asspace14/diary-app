@@ -21,13 +21,13 @@ export class MealAI {
             throw new Error("Gemini APIキーが設定されていません。先の設定画面から登録してください。");
         }
 
-        const prompt = `
-以下の食事内容から、おおよその合計カロリー（kcal）を推測してください。
-結果はカロリーの数値（半角数字のみ）だけで返答してください。単位や説明文は一切不要です。<食事内容>がない場合や推測不可能な場合は0を返してください。
+        const prompt = `以下の食事内容から、おおよその合計カロリー（kcal）を推測し、必ず以下の形式のJSONのみを出力してください。結果のカロリーは数値型にしてください。
+{
+    "calories": 250
+}
 
 <食事内容>
-${foodText}
-`;
+${foodText}`;
 
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`, {
@@ -40,8 +40,8 @@ ${foodText}
                         parts: [{ text: prompt }]
                     }],
                     generationConfig: {
-                        temperature: 0.1, // Low temperature for consistent formatting
-                        maxOutputTokens: 10
+                        temperature: 0.1,
+                        responseMimeType: "application/json"
                     }
                 })
             });
@@ -56,16 +56,15 @@ ${foodText}
             }
 
             const data = await response.json();
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '0';
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
 
-            // Extract number from the reply just in case the model added extra text
-            const numbers = reply.match(/\d+/g);
-            if (numbers && numbers.length > 0) {
-                // Return the first contiguous number found (or join them if expected to be comma separated, but usually it's just the value)
-                return parseInt(numbers[0], 10);
+            try {
+                const parsed = JSON.parse(reply);
+                return parseInt(parsed.calories, 10) || 0;
+            } catch (e) {
+                console.error("Failed to parse JSON for text estimation", e, reply);
+                return 0;
             }
-
-            return 0;
 
         } catch (error) {
             console.error("Error estimating calories:", error);
@@ -78,7 +77,7 @@ ${foodText}
             throw new Error("Gemini APIキーが設定されていません。右上の歯車アイコンから登録してください。");
         }
 
-        const prompt = `画像に写っている料理や食べ物をすべて推測し、それらの合計カロリー（kcal）と、代表的な料理名をJSON形式で返答してください。回答はマークダウン等を含めず、必ず以下の形式のJSONのみを出力してください。
+        const prompt = `画像に写っている料理や食べ物をすべて推測し、それらの合計カロリー（kcal）と、代表的な料理名をJSON形式で返答してください。回答はマークダウン等を含めず、必ず以下の形式のJSONのみを出力してください。カロリーの値にはカンマ(,)を含めない数値型にしてください。
 {
     "name": "推測した料理名",
     "calories": 500
@@ -123,9 +122,10 @@ ${foodText}
 
             try {
                 const parsed = JSON.parse(reply);
+                const calStr = String(parsed.calories || '0').replace(/,/g, '');
                 return {
                     name: parsed.name || '',
-                    calories: parseInt(parsed.calories, 10) || 0
+                    calories: parseInt(calStr, 10) || 0
                 };
             } catch (e) {
                 console.error("Failed to parse JSON", e, reply);

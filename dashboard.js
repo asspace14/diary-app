@@ -62,9 +62,15 @@ export async function renderDashboard() {
     const taskStatus = totalTasks > 0 ? `${completedTasks} / ${totalTasks} 完了` : '';
 
     let taskHtml = '<ul class="dashboard-list">';
-    tasks.forEach(t => {
-        taskHtml += `<li class="${t.completed ? 'completed' : ''}"><span class="material-icons-round" style="font-size: 1rem; margin-right: 0.25rem;">${t.completed ? 'check_circle' : 'radio_button_unchecked'}</span>${t.text}</li>`;
+    const pendingTasks = tasks.filter(t => !t.completed);
+
+    pendingTasks.forEach(t => {
+        taskHtml += `<li class="${t.completed ? 'completed' : ''} db-task-item" data-id="${t.id}" style="cursor:pointer; display:flex; align-items:center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);"><span class="material-icons-round" style="font-size: 1.2rem; margin-right: 0.5rem; color: ${t.completed ? 'var(--secondary-color)' : '#999'};">${t.completed ? 'check_circle' : 'radio_button_unchecked'}</span>${t.text}</li>`;
     });
+
+    if (totalTasks > 0 && pendingTasks.length === 0) {
+        taskHtml += `<li style="text-align:center; padding: 1rem 0; color: var(--text-light); border-bottom: none;"><span class="material-icons-round" style="font-size: 2rem; color: var(--secondary-color); margin-bottom: 0.5rem; display: block;">celebration</span>すべてのタスクが完了しました！</li>`;
+    }
     taskHtml += '</ul>';
 
     const taskCard = createCard('タスク', '📝', taskHtml, 'タスクはありません', totalTasks > 0);
@@ -73,12 +79,24 @@ export async function renderDashboard() {
     const meals = mStorage.getMealRecords(currentDateStr) || [];
     const mealTypeLabels = { 'breakfast': '朝', 'lunch': '昼', 'dinner': '夕', 'snack': '間' };
 
-    let mealHtml = '<ul class="dashboard-list mb-2">';
+    let mealHtml = '<div style="text-align:center; padding: 1rem 0;">';
     meals.forEach(m => {
-        totalCals += m.calories;
-        mealHtml += `<li><span class="db-badge">${mealTypeLabels[m.type]}</span> ${m.text} <span class="db-cal">${m.calories} kcal</span></li>`;
+        const cals = Number(m.calories) || 0;
+        totalCals += cals;
     });
-    mealHtml += '</ul>';
+
+    // Calculate yesterday's calories
+    const dateObj = new Date(currentDateStr);
+    dateObj.setDate(dateObj.getDate() - 1);
+    const yesterdayStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    const prevMeals = mStorage.getMealRecords(yesterdayStr) || [];
+    let prevCals = 0;
+    prevMeals.forEach(m => { prevCals += (Number(m.calories) || 0); });
+
+    mealHtml += `<div style="display:flex; justify-content:space-around; align-items:center;">`;
+    mealHtml += `<div><div style="font-size:0.85rem; color:var(--text-light); margin-bottom:0.25rem;">前日</div><strong style="font-size: 1.2rem; color:var(--text-light);">${prevCals} kcal</strong></div>`;
+    mealHtml += `<div><div style="font-size:0.85rem; color:var(--text-light); margin-bottom:0.25rem;">当日</div><strong style="font-size: 1.5rem; color:var(--secondary-color);">${totalCals} kcal</strong></div>`;
+    mealHtml += `</div></div>`;
 
     const mealCard = createCard('食事', '🍽️', mealHtml, '食事記録はありません', meals.length > 0);
 
@@ -113,17 +131,14 @@ export async function renderDashboard() {
 
     // 5. Expenses
     const expenses = eStorage.getExpenseRecords(currentDateStr) || [];
-    let expenseHtml = '<ul class="dashboard-list">';
+    let expenseHtml = '<div style="text-align:center; padding: 1rem 0;">';
     let totalExpense = 0;
     expenses.forEach(e => {
-        totalExpense += e.amount;
-        const icon = e.type === 'cashless' ? '💳' : '💴';
-        expenseHtml += `<li><span style="font-size:1.1rem;margin-right:0.25rem;">${icon}</span> <strong>${e.itemName}</strong> <span class="db-cal">${e.amount.toLocaleString()} 円</span></li>`;
+        const amt = Number(e.amount) || 0;
+        totalExpense += amt;
     });
-    if (totalExpense > 0) {
-        expenseHtml += `<li style="margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid var(--border-color);"><strong style="margin-left:auto;">合計: <span style="color:var(--secondary-color);">${totalExpense.toLocaleString()} 円</span></strong></li>`;
-    }
-    expenseHtml += '</ul>';
+    expenseHtml += `<strong style="font-size: 1.5rem; color:var(--secondary-color);">${totalExpense.toLocaleString()} 円</strong>`;
+    expenseHtml += '</div>';
 
     const expenseCard = createCard('家計簿', '💰', expenseHtml, '支出記録はありません', expenses.length > 0);
 
@@ -133,6 +148,17 @@ export async function renderDashboard() {
     elements.content.appendChild(trainingCard);
     elements.content.appendChild(expenseCard);
     elements.content.appendChild(diaryCard);
+
+    // Attach event listeners for task toggling
+    const taskItems = taskCard.querySelectorAll('.db-task-item');
+    taskItems.forEach(item => {
+        item.addEventListener('click', async () => {
+            const taskId = item.getAttribute('data-id');
+            await tskStorage.toggleTaskStatus(taskId, currentDateStr);
+            // Re-render dashboard or trigger event
+            document.dispatchEvent(new CustomEvent('tasksUpdated'));
+        });
+    });
 
     // Update total calories badge
     if (elements.totalCalBadge) {

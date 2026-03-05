@@ -113,7 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         storage.loadMonthData(year, month + 1),
                         tStorage.loadMonthTrainingData(year, month + 1),
                         tskStorage.fetchTaskDataForMonth(year, month + 1),
-                        mStorage.fetchMealDataForMonth(year, month + 1)
+                        mStorage.fetchMealDataForMonth(year, month + 1),
+                        eStorage.fetchExpenseDataForMonth(year, month + 1)
                     ]);
 
                     calendar.render();
@@ -129,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 onTrainingAuthChange(null);
                 tskStorage.clearTaskCache();
                 mStorage.clearMealCache();
+                eStorage.clearExpenseCache();
 
                 // Update Header UI
                 elements.authBtn.textContent = 'ログイン';
@@ -182,11 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
             async (year, month) => {
                 if (getCurrentUser()) {
                     await Promise.all([
-                        storage.loadMonthData(year, month),
-                        tStorage.loadMonthTrainingData(year, month),
-                        tskStorage.fetchTaskDataForMonth(year, month),
-                        mStorage.fetchMealDataForMonth(year, month), // Load meal data
-                        eStorage.fetchExpenseDataForMonth(year, month) // Load expense data
+                        storage.loadMonthData(year, month + 1),
+                        tStorage.loadMonthTrainingData(year, month + 1),
+                        tskStorage.fetchTaskDataForMonth(year, month + 1),
+                        mStorage.fetchMealDataForMonth(year, month + 1), // Load meal data
+                        eStorage.fetchExpenseDataForMonth(year, month + 1) // Load expense data
                     ]);
                 }
             }

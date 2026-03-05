@@ -112,6 +112,16 @@ export async function updateTaskCompletion(taskId, dateStr, completed) {
     }
 }
 
+export async function toggleTaskStatus(taskId, dateStr) {
+    if (taskCache[dateStr]) {
+        const task = taskCache[dateStr].find(t => t.id === taskId);
+        if (task) {
+            return await updateTaskCompletion(taskId, dateStr, !task.completed);
+        }
+    }
+    return false;
+}
+
 export async function deleteTask(taskId, dateStr) {
     const user = auth.currentUser;
     if (!user) return false;

@@ -220,3 +220,172 @@ export async function deleteMealMaster(masterId) {
         return false;
     }
 }
+
+export async function getMealEntriesForDateRange(startDateStr, endDateStr) {
+    const user = auth.currentUser;
+    if (!user) return {};
+
+    try {
+        const q = query(
+            collection(db, `users/${user.uid}/meals`),
+            where("date", ">=", startDateStr),
+            where("date", "<=", endDateStr)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const newData = {};
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const date = data.date;
+            if (!newData[date]) newData[date] = [];
+            newData[date].push({ id: docSnap.id, ...data });
+        });
+
+        Object.keys(newData).forEach(date => {
+            newData[date].sort((a, b) => a.createdAt - b.createdAt);
+        });
+
+        return newData;
+    } catch (error) {
+        console.error("Error loading date range meal data:", error);
+        return {};
+    }
+}
+
+export async function getMealEntriesForYear(year) {
+    const user = auth.currentUser;
+    if (!user) return {};
+
+    try {
+        const q = query(
+            collection(db, `users/${user.uid}/meals`),
+            where("date", ">=", `${year}-01-01`),
+            where("date", "<=", `${year}-12-31`)
+        );
+        const querySnapshot = await getDocs(q);
+
+        const yearEntries = {};
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const date = data.date;
+            if (!yearEntries[date]) yearEntries[date] = [];
+            yearEntries[date].push({ id: docSnap.id, ...data });
+        });
+
+        Object.keys(yearEntries).forEach(date => {
+            yearEntries[date].sort((a, b) => a.createdAt - b.createdAt);
+        });
+
+        return yearEntries;
+    } catch (error) {
+        console.error("Error loading year meal data:", error);
+        return {};
+    }
+}
+
+// --- Export Functions ---
+function generateText(textContent) {
+    const blob = new Blob(['\uFEFF' + textContent], { type: 'text/plain;charset=utf-8;' });
+    return URL.createObjectURL(blob);
+}
+
+function downloadFile(url, filename) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function formatMealRecordsAsText(dateStr, records) {
+    if (!records || records.length === 0) return '';
+    let text = `【${dateStr}】\n`;
+
+    let totalCalories = 0;
+    records.forEach(r => {
+        const typeLabels = {
+            'breakfast': '朝食',
+            'lunch': '昼食',
+            'dinner': '夕食',
+            'snack': '間食'
+        };
+        const label = typeLabels[r.type] || 'その他';
+        text += `・[${label}] ${r.text} (${r.calories}kcal)\n`;
+        totalCalories += (r.calories || 0);
+    });
+    text += `合計: ${totalCalories}kcal\n`;
+    return text + '\n';
+}
+
+export async function exportMealDayData(dateStr) {
+    const records = getMealRecords(dateStr);
+    if (!records || records.length === 0) return false;
+
+    const content = formatMealRecordsAsText(dateStr, records);
+    const url = generateText(content);
+    downloadFile(url, `meal_${dateStr}.txt`);
+    return true;
+}
+
+export async function exportMealWeekData(dateStr) {
+    const dateObj = new Date(dateStr);
+    const dayOfWeek = dateObj.getDay();
+    const startDate = new Date(dateObj);
+    startDate.setDate(dateObj.getDate() - dayOfWeek);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr = endDate.toISOString().split('T')[0];
+
+    const data = await getMealEntriesForDateRange(startStr, endStr);
+    if (Object.keys(data).length === 0) return false;
+
+    let content = `食事記録 (${startStr} ～ ${endStr})\n==============================\n\n`;
+    const sortedDates = Object.keys(data).sort();
+    sortedDates.forEach(date => {
+        content += formatMealRecordsAsText(date, data[date]);
+    });
+
+    const url = generateText(content);
+    downloadFile(url, `meal_week_${startStr}_to_${endStr}.txt`);
+    return true;
+}
+
+export async function exportMealMonthData(year, month) {
+    const monthStr = String(month).padStart(2, '0');
+    const startStr = `${year}-${monthStr}-01`;
+    const endStr = `${year}-${monthStr}-31`;
+
+    const data = await getMealEntriesForDateRange(startStr, endStr);
+    if (Object.keys(data).length === 0) return false;
+
+    let content = `食事記録 (${year}年${monthStr}月)\n==============================\n\n`;
+    const sortedDates = Object.keys(data).sort();
+    sortedDates.forEach(date => {
+        content += formatMealRecordsAsText(date, data[date]);
+    });
+
+    const url = generateText(content);
+    downloadFile(url, `meal_${year}_${monthStr}.txt`);
+    return true;
+}
+
+export async function exportMealYearData(year) {
+    const data = await getMealEntriesForYear(year);
+    if (Object.keys(data).length === 0) return false;
+
+    let content = `食事記録 (${year}年)\n==============================\n\n`;
+    const sortedDates = Object.keys(data).sort();
+    sortedDates.forEach(date => {
+        content += formatMealRecordsAsText(date, data[date]);
+    });
+
+    const url = generateText(content);
+    downloadFile(url, `meal_${year}.txt`);
+    return true;
+}

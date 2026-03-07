@@ -3,6 +3,7 @@ import { db, collection, doc, setDoc, getDocs, deleteDoc, getDoc, query, where }
 import { getCurrentUser } from './auth.js';
 
 let trainingCache = {};
+let bodyWeightCache = {};
 let currentLoadedMonth = '';
 let masterExercises = []; // Array of { id, name, category }
 
@@ -82,8 +83,13 @@ export async function loadMonthTrainingData(year, month) {
         const querySnapshot = await getDocs(q);
 
         trainingCache = {};
+        bodyWeightCache = {};
         querySnapshot.forEach((docSnap) => {
-            trainingCache[docSnap.id] = docSnap.data().records || [];
+            const data = docSnap.data();
+            trainingCache[docSnap.id] = data.records || [];
+            if (data.bodyWeight !== undefined && data.bodyWeight !== null) {
+                bodyWeightCache[docSnap.id] = data.bodyWeight;
+            }
         });
 
         currentLoadedMonth = prefix;
@@ -140,8 +146,138 @@ export async function deleteTrainingDay(dateStr) {
     }
 }
 
+export async function saveBodyWeight(dateStr, weight) {
+    const user = getCurrentUser();
+    if (!user) return false;
+
+    if (weight === null) {
+        delete bodyWeightCache[dateStr];
+    } else {
+        bodyWeightCache[dateStr] = weight;
+    }
+
+    try {
+        const monthPrefix = dateStr.substring(0, 7);
+        const docRef = doc(db, `users/${user.uid}/trainingRecords`, dateStr);
+
+        await setDoc(docRef, {
+            bodyWeight: weight,
+            monthPrefix: monthPrefix,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        return true;
+    } catch (error) {
+        console.error("Error saving body weight:", error);
+        return false;
+    }
+}
+
+export async function getBodyWeight(dateStr) {
+    if (bodyWeightCache[dateStr] !== undefined) {
+        return bodyWeightCache[dateStr];
+    }
+
+    // Check firebase directly if not in cache (e.g. today but past month unloaded)
+    const user = getCurrentUser();
+    if (!user) return null;
+    try {
+        const docRef = doc(db, `users/${user.uid}/trainingRecords`, dateStr);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().bodyWeight) {
+            bodyWeightCache[dateStr] = docSnap.data().bodyWeight;
+            return bodyWeightCache[dateStr];
+        }
+    } catch (e) {
+        console.error("Error fetching body weight:", e);
+    }
+    return null;
+}
+
+export async function getLatestBodyWeight(dateStr) {
+    const user = getCurrentUser();
+    if (!user) return null;
+
+    let searchDate = new Date(dateStr);
+
+    // Look back up to 6 months
+    for (let i = 0; i < 6; i++) {
+        const year = searchDate.getFullYear();
+        const month = searchDate.getMonth() + 1;
+        const prefix = `${year}-${String(month).padStart(2, '0')}`;
+
+        try {
+            const q = query(
+                collection(db, `users/${user.uid}/trainingRecords`),
+                where('monthPrefix', '==', prefix)
+            );
+            const monthDocs = await getDocs(q);
+
+            let latestWeight = null;
+            let latestDate = '';
+
+            monthDocs.forEach(docSnap => {
+                const date = docSnap.id;
+                const data = docSnap.data();
+                if (date <= dateStr && data.bodyWeight) {
+                    if (date > latestDate) {
+                        latestDate = date;
+                        latestWeight = data.bodyWeight;
+                    }
+                }
+            });
+
+            if (latestWeight !== null) {
+                return { weight: latestWeight, date: latestDate };
+            }
+        } catch (error) {
+            console.error("Error querying latest body weight:", error);
+        }
+
+        searchDate.setMonth(searchDate.getMonth() - 1);
+    }
+    return null;
+}
+
 export function hasTraining(dateStr) {
     return trainingCache[dateStr] && trainingCache[dateStr].length > 0;
+}
+
+export async function toggleTrainingStatus(index, dateStr) {
+    const user = getCurrentUser();
+    if (!user) return false;
+
+    const records = trainingCache[dateStr] || [];
+    if (!records[index]) return false;
+
+    let isFullyCompleted = false;
+    if (Array.isArray(records[index].completed)) {
+        isFullyCompleted = records[index].completed.every(c => c);
+        // Toggle all sets
+        records[index].completed = records[index].completed.map(() => !isFullyCompleted);
+    } else {
+        records[index].completed = !records[index].completed;
+    }
+
+    await saveTrainingRecords(dateStr, records);
+    return true;
+}
+
+export async function toggleSpecificTrainingStatus(index, dateStr, setIndex = null) {
+    const user = getCurrentUser();
+    if (!user) return false;
+
+    const records = trainingCache[dateStr] || [];
+    if (!records[index]) return false;
+
+    if (setIndex !== null && Array.isArray(records[index].completed)) {
+        records[index].completed[setIndex] = !records[index].completed[setIndex];
+    } else {
+        records[index].completed = !records[index].completed;
+    }
+
+    await saveTrainingRecords(dateStr, records);
+    return true;
 }
 
 export async function copyTrainingData(sourceDateStr, targetDateStr) {
@@ -320,7 +456,7 @@ export async function exportTrainingWeekData(dateStr) {
     const data = await getTrainingEntriesForDateRange(startStr, endStr);
     if (Object.keys(data).length === 0) return false;
 
-    let content = `筋トレ記録 (${startStr} ～ ${endStr})\n==============================\n\n`;
+    let content = `運動記録 (${startStr} ～ ${endStr})\n==============================\n\n`;
     const sortedDates = Object.keys(data).sort();
     sortedDates.forEach(date => {
         content += formatRecordsAsText(date, data[date]);
@@ -336,7 +472,7 @@ export async function exportTrainingMonthData(year, month) {
     if (Object.keys(data).length === 0) return false;
 
     const monthStr = String(month).padStart(2, '0');
-    let content = `筋トレ記録 (${year}年${monthStr}月)\n==============================\n\n`;
+    let content = `運動記録 (${year}年${monthStr}月)\n==============================\n\n`;
     const sortedDates = Object.keys(data).sort();
     sortedDates.forEach(date => {
         content += formatRecordsAsText(date, data[date]);
@@ -351,7 +487,7 @@ export async function exportTrainingYearData(year) {
     const data = await getTrainingEntriesForYear(year);
     if (Object.keys(data).length === 0) return false;
 
-    let content = `筋トレ記録 (${year}年)\n==============================\n\n`;
+    let content = `運動記録 (${year}年)\n==============================\n\n`;
     const sortedDates = Object.keys(data).sort();
     sortedDates.forEach(date => {
         content += formatRecordsAsText(date, data[date]);

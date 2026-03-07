@@ -143,3 +143,162 @@ export function clearTaskCache() {
     taskCache = {};
     currentLoadedMonth = '';
 }
+
+export async function getTaskEntriesForDateRange(startDateStr, endDateStr) {
+    const user = auth.currentUser;
+    if (!user) return {};
+
+    try {
+        const q = query(
+            collection(db, `users/${user.uid}/tasks`),
+            where("date", ">=", startDateStr),
+            where("date", "<=", endDateStr)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const newData = {};
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const date = data.date;
+            if (!newData[date]) newData[date] = [];
+            newData[date].push({ id: docSnap.id, ...data });
+        });
+
+        Object.keys(newData).forEach(date => {
+            newData[date].sort((a, b) => a.createdAt - b.createdAt);
+        });
+
+        return newData;
+    } catch (error) {
+        console.error("Error loading date range task data:", error);
+        return {};
+    }
+}
+
+export async function getTaskEntriesForYear(year) {
+    const user = auth.currentUser;
+    if (!user) return {};
+
+    try {
+        const q = query(
+            collection(db, `users/${user.uid}/tasks`),
+            where("date", ">=", `${year}-01-01`),
+            where("date", "<=", `${year}-12-31`)
+        );
+        const querySnapshot = await getDocs(q);
+
+        const yearEntries = {};
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const date = data.date;
+            if (!yearEntries[date]) yearEntries[date] = [];
+            yearEntries[date].push({ id: docSnap.id, ...data });
+        });
+
+        Object.keys(yearEntries).forEach(date => {
+            yearEntries[date].sort((a, b) => a.createdAt - b.createdAt);
+        });
+
+        return yearEntries;
+    } catch (error) {
+        console.error("Error loading year task data:", error);
+        return {};
+    }
+}
+
+// --- Export Functions ---
+function generateText(textContent) {
+    const blob = new Blob(['\uFEFF' + textContent], { type: 'text/plain;charset=utf-8;' });
+    return URL.createObjectURL(blob);
+}
+
+function downloadFile(url, filename) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function formatTaskRecordsAsText(dateStr, records) {
+    if (!records || records.length === 0) return '';
+    let text = `【${dateStr}】\n`;
+    records.forEach(r => {
+        text += `・[${r.completed ? 'x' : ' '}] ${r.text}\n`;
+    });
+    return text + '\n';
+}
+
+export async function exportTaskDayData(dateStr) {
+    const records = getTaskRecords(dateStr);
+    if (!records || records.length === 0) return false;
+
+    const content = formatTaskRecordsAsText(dateStr, records);
+    const url = generateText(content);
+    downloadFile(url, `task_${dateStr}.txt`);
+    return true;
+}
+
+export async function exportTaskWeekData(dateStr) {
+    const dateObj = new Date(dateStr);
+    const dayOfWeek = dateObj.getDay();
+    const startDate = new Date(dateObj);
+    startDate.setDate(dateObj.getDate() - dayOfWeek);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr = endDate.toISOString().split('T')[0];
+
+    const data = await getTaskEntriesForDateRange(startStr, endStr);
+    if (Object.keys(data).length === 0) return false;
+
+    let content = `タスク記録 (${startStr} ～ ${endStr})\n==============================\n\n`;
+    const sortedDates = Object.keys(data).sort();
+    sortedDates.forEach(date => {
+        content += formatTaskRecordsAsText(date, data[date]);
+    });
+
+    const url = generateText(content);
+    downloadFile(url, `task_week_${startStr}_to_${endStr}.txt`);
+    return true;
+}
+
+export async function exportTaskMonthData(year, month) {
+    const monthStr = String(month).padStart(2, '0');
+    const startStr = `${year}-${monthStr}-01`;
+    const endStr = `${year}-${monthStr}-31`;
+
+    // Using date range fetcher instead since month prefix alone isn't cached if not active
+    const data = await getTaskEntriesForDateRange(startStr, endStr);
+    if (Object.keys(data).length === 0) return false;
+
+    let content = `タスク記録 (${year}年${monthStr}月)\n==============================\n\n`;
+    const sortedDates = Object.keys(data).sort();
+    sortedDates.forEach(date => {
+        content += formatTaskRecordsAsText(date, data[date]);
+    });
+
+    const url = generateText(content);
+    downloadFile(url, `task_${year}_${monthStr}.txt`);
+    return true;
+}
+
+export async function exportTaskYearData(year) {
+    const data = await getTaskEntriesForYear(year);
+    if (Object.keys(data).length === 0) return false;
+
+    let content = `タスク記録 (${year}年)\n==============================\n\n`;
+    const sortedDates = Object.keys(data).sort();
+    sortedDates.forEach(date => {
+        content += formatTaskRecordsAsText(date, data[date]);
+    });
+
+    const url = generateText(content);
+    downloadFile(url, `task_${year}.txt`);
+    return true;
+}

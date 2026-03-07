@@ -346,15 +346,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = exportDayData(currentDateStr);
             if (success) showToast(`${currentDateStr}の日記データを出力しました`);
             else showToast(`${currentDateStr}の日記データがありません`);
-        } else if (mode === 'expense') { // Added expense export
+        } else if (mode === 'expense') {
             const success = await eStorage.exportExpenseDayData(currentDateStr);
             if (success) showToast(`${currentDateStr}の家計簿データを出力しました`);
             else showToast(`${currentDateStr}の家計簿データがありません`);
-        }
-        else {
+        } else if (mode === 'task') {
+            const success = await tskStorage.exportTaskDayData(currentDateStr);
+            if (success) showToast(`${currentDateStr}のタスクデータを出力しました`);
+            else showToast(`${currentDateStr}のタスクデータがありません`);
+        } else if (mode === 'meal') {
+            const success = await mStorage.exportMealDayData(currentDateStr);
+            if (success) showToast(`${currentDateStr}の食事データを出力しました`);
+            else showToast(`${currentDateStr}の食事データがありません`);
+        } else {
             const success = await tStorage.exportTrainingDayData(currentDateStr);
-            if (success) showToast(`${currentDateStr}の筋トレデータを出力しました`);
-            else showToast(`${currentDateStr}の筋トレデータがありません`);
+            if (success) showToast(`${currentDateStr}の運動データを出力しました`);
+            else showToast(`${currentDateStr}の運動データがありません`);
         }
         closeExportModal();
     }
@@ -366,15 +373,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = await exportWeekData(currentDateStr);
             if (success) showToast(`週の日記データを出力しました`);
             else showToast(`選択した週の日記データがありません`);
-        } else if (mode === 'expense') { // Added expense export
+        } else if (mode === 'expense') {
             const success = await eStorage.exportExpenseWeekData(currentDateStr);
             if (success) showToast(`週の家計簿データを出力しました`);
             else showToast(`選択した週の家計簿データがありません`);
-        }
-        else {
+        } else if (mode === 'task') {
+            const success = await tskStorage.exportTaskWeekData(currentDateStr);
+            if (success) showToast(`週のタスクデータを出力しました`);
+            else showToast(`選択した週のタスクデータがありません`);
+        } else if (mode === 'meal') {
+            const success = await mStorage.exportMealWeekData(currentDateStr);
+            if (success) showToast(`週の食事データを出力しました`);
+            else showToast(`選択した週の食事データがありません`);
+        } else {
             const success = await tStorage.exportTrainingWeekData(currentDateStr);
-            if (success) showToast(`週の筋トレデータを出力しました`);
-            else showToast(`選択した週の筋トレデータがありません`);
+            if (success) showToast(`週の運動データを出力しました`);
+            else showToast(`選択した週の運動データがありません`);
         }
         closeExportModal();
     }
@@ -388,15 +402,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = await exportMonthData(year, month + 1);
             if (success) showToast(`${year}年${month + 1}月の日記データを出力しました`);
             else showToast(`${year}年${month + 1}月の日記データがありません`);
-        } else if (mode === 'expense') { // Added expense export
+        } else if (mode === 'expense') {
             const success = await eStorage.exportExpenseMonthData(year, month + 1);
             if (success) showToast(`${year}年${month + 1}月の家計簿データを出力しました`);
             else showToast(`${year}年${month + 1}月の家計簿データがありません`);
-        }
-        else {
+        } else if (mode === 'task') {
+            const success = await tskStorage.exportTaskMonthData(year, month + 1);
+            if (success) showToast(`${year}年${month + 1}月のタスクデータを出力しました`);
+            else showToast(`${year}年${month + 1}月のタスクデータがありません`);
+        } else if (mode === 'meal') {
+            const success = await mStorage.exportMealMonthData(year, month + 1);
+            if (success) showToast(`${year}年${month + 1}月の食事データを出力しました`);
+            else showToast(`${year}年${month + 1}月の食事データがありません`);
+        } else {
             const success = await tStorage.exportTrainingMonthData(year, month + 1);
-            if (success) showToast(`${year}年${month + 1}月の筋トレデータを出力しました`);
-            else showToast(`${year}年${month + 1}月の筋トレデータがありません`);
+            if (success) showToast(`${year}年${month + 1}月の運動データを出力しました`);
+            else showToast(`${year}年${month + 1}月の運動データがありません`);
         }
         closeExportModal();
     }
@@ -410,15 +431,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const success = await exportYearData(year);
             if (success) showToast(`${year}年の日記データを出力しました`);
             else showToast(`${year}年の日記データがありません`);
-        } else if (mode === 'expense') { // Added expense export
+        } else if (mode === 'expense') {
             const success = await eStorage.exportExpenseYearData(year);
             if (success) showToast(`${year}年の家計簿データを出力しました`);
             else showToast(`${year}年の家計簿データがありません`);
-        }
-        else {
+        } else if (mode === 'task') {
+            const success = await tskStorage.exportTaskYearData(year);
+            if (success) showToast(`${year}年のタスクデータを出力しました`);
+            else showToast(`${year}年のタスクデータがありません`);
+        } else if (mode === 'meal') {
+            const success = await mStorage.exportMealYearData(year);
+            if (success) showToast(`${year}年の食事データを出力しました`);
+            else showToast(`${year}年の食事データがありません`);
+        } else {
             const success = await tStorage.exportTrainingYearData(year);
-            if (success) showToast(`${year}年の筋トレデータを出力しました`);
-            else showToast(`${year}年の筋トレデータがありません`);
+            if (success) showToast(`${year}年の運動データを出力しました`);
+            else showToast(`${year}年の運動データがありません`);
         }
         closeExportModal();
     }
@@ -472,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (mode === 'training') {
             elements.modeTrainingBtn.classList.add('active');
             elements.trainingView.classList.remove('hidden');
-            document.querySelector('.app-title').textContent = '筋トレ';
+            document.querySelector('.app-title').textContent = '運動';
         } else if (mode === 'expense') {
             elements.modeExpenseBtn.classList.add('active');
             elements.expenseView.classList.remove('hidden');
@@ -533,5 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mealsUpdated', () => {
             calendar.render();
         });
+
+        // Set default view on load
+        switchMode('dashboard');
     }
 });

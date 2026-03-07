@@ -33,13 +33,16 @@ export function initDashboard() {
     });
 }
 
-function createCard(title, icon, contentHtml, emptyHtml, hasData) {
+function createCard(title, icon, contentHtml, emptyHtml, hasData, headerExtraHtml = '') {
     const card = document.createElement('div');
     card.className = 'dashboard-card';
     card.innerHTML = `
-        <div class="dashboard-card-header">
-            <span class="dashboard-card-icon">${icon}</span>
-            <span class="dashboard-card-title">${title}</span>
+        <div class="dashboard-card-header" style="display: flex; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <span class="dashboard-card-icon">${icon}</span>
+                <span class="dashboard-card-title">${title}</span>
+            </div>
+            ${headerExtraHtml}
         </div>
         <div class="dashboard-card-body">
             ${hasData ? contentHtml : `<div class="dashboard-empty">${emptyHtml}</div>`}
@@ -103,7 +106,7 @@ export async function renderDashboard() {
     // 3. Training
     const trainings = tStorage.getTrainingRecords(currentDateStr) || [];
     let trainingHtml = '<ul class="dashboard-list">';
-    trainings.forEach(t => {
+    trainings.forEach((t, index) => {
         let details = '';
         if (t.category === 'weight' || t.type === 'weight') {
             details = `${t.weight}kg × ${t.reps}回 × ${t.sets}Set`;
@@ -113,34 +116,64 @@ export async function renderDashboard() {
             details = `${t.reps}回 × ${t.sets}Set`;
         }
 
-        trainingHtml += `<li><strong>${t.exName}</strong> <span class="db-detail">${details}</span></li>`;
+        let isFullyCompleted = false;
+        let checkboxesHTML = '';
+        if (Array.isArray(t.completed)) {
+            isFullyCompleted = t.completed.every(c => c);
+            checkboxesHTML = `<div style="display: flex; gap: 0.2rem; align-items: center;">`;
+            t.completed.forEach((c, setIdx) => {
+                checkboxesHTML += `<span class="material-icons-round db-set-checkbox" data-index="${index}" data-setindex="${setIdx}" style="font-size: 1.1rem; cursor: pointer; color: ${c ? 'var(--secondary-color)' : '#d0d0d0'};">${c ? 'check_circle' : 'radio_button_unchecked'}</span>`;
+            });
+            checkboxesHTML += `</div>`;
+        } else {
+            isFullyCompleted = t.completed;
+            checkboxesHTML = `<span class="material-icons-round db-single-checkbox" data-index="${index}" style="font-size: 1.2rem; cursor: pointer; color: ${isFullyCompleted ? 'var(--secondary-color)' : '#d0d0d0'};">${isFullyCompleted ? 'check_circle' : 'radio_button_unchecked'}</span>`;
+        }
+
+        trainingHtml += `<li class="${isFullyCompleted ? 'completed' : ''}" style="display:flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
+                                ${!Array.isArray(t.completed) ? checkboxesHTML : ''}
+                                <strong style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${isFullyCompleted ? 'var(--text-light)' : 'var(--text-color)'};">${t.exName}</strong>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                <span class="db-detail" style="font-size: 0.8rem; color: var(--text-light); white-space: nowrap;">${details}</span>
+                                ${Array.isArray(t.completed) ? checkboxesHTML : ''}
+                            </div>
+                        </li>`;
     });
     trainingHtml += '</ul>';
 
-    const trainingCard = createCard('筋トレ', '🏋️', trainingHtml, 'トレーニング記録はありません', trainings.length > 0);
+
+    const latestWeightData = await tStorage.getLatestBodyWeight(currentDateStr);
+    let weightDisplay = '';
+    if (latestWeightData) {
+        const [y, m, d] = latestWeightData.date.split('-');
+        const shortDate = `${parseInt(m)}/${parseInt(d)}`;
+        weightDisplay = `<span style="font-size: 0.8rem; color: var(--secondary-color); font-weight: bold; margin-left: auto; background: rgba(0,255,136,0.1); padding: 0.2rem 0.5rem; border-radius: 4px;">${shortDate} 体重 ${latestWeightData.weight}kg</span>`;
+    }
+
+    const trainingCard = createCard('運動', '🏋️', trainingHtml, '運動記録はありません', trainings.length > 0 || !!latestWeightData, weightDisplay);
 
     // 4. Diary
-    const entry = storage.getEntry(currentDateStr);
+    const entryText = storage.getEntry(currentDateStr);
     let diaryHtml = '';
-    if (entry && entry.text) {
+    if (entryText && typeof entryText === 'string' && entryText.trim() !== '') {
         // truncate text
-        const snippet = entry.text.length > 50 ? entry.text.substring(0, 50) + '...' : entry.text;
+        const snippet = entryText.length > 50 ? entryText.substring(0, 50) + '...' : entryText;
         diaryHtml = `<div class="db-diary-snippet">${snippet}</div>`;
     }
-    const diaryCard = createCard('日記', '📖', diaryHtml, '日記はありません', !!(entry && entry.text));
+    const diaryCard = createCard('日記', '📖', diaryHtml, '日記はありません', !!(entryText && entryText.trim() !== ''));
 
     // 5. Expenses
-    const expenses = eStorage.getExpenseRecords(currentDateStr) || [];
+    const monthlyExpenseTotal = eStorage.getMonthlyTotalExpense() || 0;
+
     let expenseHtml = '<div style="text-align:center; padding: 1rem 0;">';
-    let totalExpense = 0;
-    expenses.forEach(e => {
-        const amt = Number(e.amount) || 0;
-        totalExpense += amt;
-    });
-    expenseHtml += `<strong style="font-size: 1.5rem; color:var(--secondary-color);">${totalExpense.toLocaleString()} 円</strong>`;
+    expenseHtml += `<div style="font-size:0.85rem; color:var(--text-light); margin-bottom:0.25rem;">今月の合計</div>`;
+    expenseHtml += `<strong style="font-size: 1.5rem; color:var(--secondary-color);">${monthlyExpenseTotal.toLocaleString()} 円</strong>`;
     expenseHtml += '</div>';
 
-    const expenseCard = createCard('家計簿', '💰', expenseHtml, '支出記録はありません', expenses.length > 0);
+    // Since it's a monthly total, it's generally good to always show the card if we logged in, but we can set condition to true so it always displays the monthly total.
+    const expenseCard = createCard('家計簿', '💰', expenseHtml, '今月の支出記録はありません', true);
 
     // Append to DOM
     elements.content.appendChild(taskCard);
@@ -157,6 +190,24 @@ export async function renderDashboard() {
             await tskStorage.toggleTaskStatus(taskId, currentDateStr);
             // Re-render dashboard or trigger event
             document.dispatchEvent(new CustomEvent('tasksUpdated'));
+        });
+    });
+
+    // Attach event listeners for training toggling
+    const trainingCheckboxes = trainingCard.querySelectorAll('.db-set-checkbox, .db-single-checkbox');
+    trainingCheckboxes.forEach(item => {
+        item.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Prevent event bubbling if necessary
+            const indexStr = item.getAttribute('data-index');
+            const setIndexStr = item.getAttribute('data-setindex');
+
+            if (indexStr !== null) {
+                const idx = parseInt(indexStr);
+                const setIdx = setIndexStr !== null ? parseInt(setIndexStr) : null;
+                // Add a new function or modify toggleTrainingStatus to handle specific sets
+                await tStorage.toggleSpecificTrainingStatus(idx, currentDateStr, setIdx);
+                document.dispatchEvent(new CustomEvent('trainingUpdated'));
+            }
         });
     });
 

@@ -26,6 +26,17 @@ export function getExpenseRecords(dateStr) {
     return expenseCache[dateStr] || [];
 }
 
+export function getMonthlyTotalExpense() {
+    let monthlyTotal = 0;
+    for (const dateStr in expenseCache) {
+        const records = expenseCache[dateStr];
+        records.forEach(r => {
+            monthlyTotal += (Number(r.amount) || 0);
+        });
+    }
+    return monthlyTotal;
+}
+
 export async function addExpense(dateStr, type, itemName, amount) {
     const user = getCurrentUser();
     if (!user) return null;

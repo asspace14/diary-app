@@ -1,5 +1,6 @@
 import * as eStorage from './expense-storage.js';
 import { formatDateJp } from './storage.js';
+import { getCurrentUser } from './auth.js';
 
 let currentDateStr = '';
 const elements = {
@@ -21,15 +22,14 @@ export function initExpenses() {
             elements.dateDisplay.textContent = `${formatDateJp(currentDateStr)} の家計簿`;
         }
 
-        if (eStorage.getCurrentUser && eStorage.getCurrentUser()) {
-            // Already fetched in app.js auth/month change usually, but double check
+        if (getCurrentUser()) {
             await renderDailyExpenses();
         }
     });
 
     document.addEventListener('monthChanged', async (e) => {
-        if (eStorage.getCurrentUser && eStorage.getCurrentUser()) {
-            await eStorage.fetchExpenseDataForMonth(e.detail.year, e.detail.month);
+        if (getCurrentUser()) {
+            await eStorage.fetchExpenseDataForMonth(e.detail.year, e.detail.month + 1);
             await renderDailyExpenses();
         }
     });

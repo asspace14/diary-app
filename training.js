@@ -42,7 +42,11 @@ const elements = {
     // Timer
     timerContainer: document.getElementById('interval-timer-container'),
     timerDisplay: document.getElementById('timer-display'),
-    timerStopBtn: document.getElementById('timer-stop-btn')
+    timerStopBtn: document.getElementById('timer-stop-btn'),
+
+    // Body Weight
+    bodyweightInput: document.getElementById('bodyweight-input'),
+    saveBodyweightBtn: document.getElementById('save-bodyweight-btn')
 };
 
 export async function initTraining() {
@@ -60,11 +64,17 @@ export async function onTrainingAuthChange(user) {
     }
 }
 
-export function selectTrainingDate(dateStr, dateObj) {
+export async function selectTrainingDate(dateStr, dateObj) {
     currentDateStr = dateStr;
     if (elements.dateDisplay) {
-        elements.dateDisplay.textContent = storage.formatDateJp(dateStr) + ' の筋トレ';
+        elements.dateDisplay.textContent = storage.formatDateJp(dateStr) + ' の運動';
     }
+
+    if (elements.bodyweightInput) {
+        const bw = await tStorage.getBodyWeight(dateStr);
+        elements.bodyweightInput.value = bw ? bw : '';
+    }
+
     renderDailyRecords();
 }
 
@@ -108,6 +118,28 @@ function setupEventListeners() {
 
     // Timer buttons
     if (elements.timerStopBtn) elements.timerStopBtn.addEventListener('click', stopTimer);
+
+    // Body Weight
+    if (elements.saveBodyweightBtn) {
+        elements.saveBodyweightBtn.addEventListener('click', handleSaveBodyweight);
+    }
+}
+
+async function handleSaveBodyweight() {
+    if (!currentDateStr) return;
+    const bodyweight = parseFloat(elements.bodyweightInput.value);
+
+    elements.saveBodyweightBtn.disabled = true;
+    const originalText = elements.saveBodyweightBtn.textContent;
+    elements.saveBodyweightBtn.textContent = '保存中...';
+
+    const success = await tStorage.saveBodyWeight(currentDateStr, isNaN(bodyweight) ? null : bodyweight);
+
+    elements.saveBodyweightBtn.textContent = success ? '保存完了' : '失敗';
+    setTimeout(() => {
+        elements.saveBodyweightBtn.textContent = originalText;
+        elements.saveBodyweightBtn.disabled = false;
+    }, 2000);
 }
 
 async function handleAddMaster() {
